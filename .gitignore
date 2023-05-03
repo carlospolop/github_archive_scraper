@@ -166,3 +166,4 @@ cython_debug/
 urls_list.txt
 users.csv
 repos.csv
+*.csv
