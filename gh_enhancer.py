@@ -17,7 +17,7 @@ PROGRESS_BAR_LOCK = Lock()
 
 
 
-def check_repos(repos:List[Repository], gh_token):
+def check_repos(repos:List[Repository], gh_token_or_file):
     """
     Get info about the Github repo
 
@@ -27,7 +27,7 @@ def check_repos(repos:List[Repository], gh_token):
 
     global UNIQUE_REPOS, REPO_LOCK
 
-    repos_info = get_repos_info(repos, gh_token)
+    repos_info = get_repos_info(repos, gh_token_or_file)
 
     if not repos_info:
         return
@@ -56,7 +56,7 @@ def check_repos(repos:List[Repository], gh_token):
             UNIQUE_REPOS[repo.full_name] = repo
 
 
-def check_users(users: List[User], gh_token):
+def check_users(users: List[User], gh_token_or_file):
     """
     Get info about the Github usernames
 
@@ -66,7 +66,7 @@ def check_users(users: List[User], gh_token):
 
     global UNIQUE_USERS, USER_LOCK
 
-    users_info = get_users_info(users, gh_token)
+    users_info = get_users_info(users, gh_token_or_file)
 
     if not users_info:
         return
@@ -87,7 +87,7 @@ def check_users(users: List[User], gh_token):
         UNIQUE_USERS[user.username] = user
 
 
-def parse_github_assets(assets, gh_token):
+def parse_github_assets(assets, gh_token_or_file):
     """
     Parse a single GitHub assets and obtain details about it.
 
@@ -110,13 +110,13 @@ def parse_github_assets(assets, gh_token):
         print(f"Somehow there are users and repos in the same batch. users: {len(users)} repos: {len(repos)}")
 
     if len(users) > len(repos):
-        check_users(users, gh_token)
+        check_users(users, gh_token_or_file)
 
     else:
-        check_repos(repos, gh_token)
+        check_repos(repos, gh_token_or_file)
         
 
-def worker(queue, progress_bar, gh_token):
+def worker(queue, progress_bar, gh_token_or_file):
     """
     Worker function for threads. Continuously processes URLs from the queue until a sentinel value (None) is encountered.
 
@@ -130,7 +130,7 @@ def worker(queue, progress_bar, gh_token):
         asset = queue.get()
         if asset is None:
             break
-        parse_github_assets(asset, gh_token)
+        parse_github_assets(asset, gh_token_or_file)
         
         with PROGRESS_BAR_LOCK:
             progress_bar.update()
@@ -139,7 +139,7 @@ def worker(queue, progress_bar, gh_token):
         
 
 
-def process_github_assets(output_folder, num_threads, gh_token, assets, title):
+def process_github_assets(output_folder, num_threads, gh_token_or_file, assets, title):
     """
     Process a list of GitHub assets using multi-threading, extract details about repositories and users,
     and write the results to CSV files in the specified output folder.
@@ -158,10 +158,10 @@ def process_github_assets(output_folder, num_threads, gh_token, assets, title):
         queue.put(users_batch)
 
     # Create and start worker threads with a progress bar
-    with tqdm(total=len(assets)/batch_size, desc=title) as progress_bar:
+    with tqdm(total=int(len(assets)/batch_size), desc=title) as progress_bar:
         threads = []
         for _ in range(num_threads):
-            t = Thread(target=worker, args=(queue, progress_bar, gh_token))
+            t = Thread(target=worker, args=(queue, progress_bar, gh_token_or_file))
             t.start()
             threads.append(t)
 
@@ -177,38 +177,43 @@ def process_github_assets(output_folder, num_threads, gh_token, assets, title):
             t.join()
 
     if "repo" in title.lower():
-        write_csv_files(UNIQUE_REPOS, None, output_folder, only_repos=True)
+        write_csv_files(UNIQUE_REPOS, None, output_folder)
     else:
-        write_csv_files(None, UNIQUE_USERS, output_folder, only_users=True)
+        write_csv_files(None, UNIQUE_USERS, output_folder)
 
 
 
-def main(output_folder, num_threads, gh_token):
+def main(output_folder, num_threads, gh_token_or_file, file_tokens):
     """
     Main function to process a file containing GitHub Archive URLs using multi-threading and write the results to CSV files.
 
     :param output_folder: The folder path where the final CSV files will be generated.
     :param num_threads: The number of threads to use for processing URLs.
-    :param gh_token: Github token to use for API calls.
+    :param gh_token_or_file: Github token to use for API calls.
     """
     
     global UNIQUE_REPOS, UNIQUE_USERS
 
+    t = gh_token_or_file if gh_token_or_file else file_tokens
+
     repos = load_csv_repo_file(output_folder)
     UNIQUE_REPOS = repos
-    process_github_assets(output_folder, num_threads, gh_token, repos, "Processing repositories")
+    process_github_assets(output_folder, num_threads, t, repos, "Processing repositories")
     del repos
 
     users = load_csv_user_file(output_folder)
     UNIQUE_USERS = users
-    process_github_assets(output_folder, num_threads, gh_token, users, "Processing users")
+    process_github_assets(output_folder, num_threads, t, users, "Processing users")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process GitHub Archive URLs and generate unique repositories and users CSV files.")
     parser.add_argument('output_folder', type=str, help="The path of the folder where the CSV files are generated.")
     parser.add_argument('-t', '--threads', type=int, default=10, help="Number of threads to use for processing Github assets.")
-    parser.add_argument('-T', '--token', type=str, help="Github token to use for API calls.", required=True)
-
+    
+    token_group = parser.add_mutually_exclusive_group(required=True)
+    token_group.add_argument('-T', '--token', type=str, help="Github token to use for API calls.")
+    token_group.add_argument('-f', '--file-tokens', type=str, help="File containing Github tokens to use for API calls.")
+    
     args = parser.parse_args()
-    main(args.output_folder, args.threads, args.token)
+    main(args.output_folder, args.threads, args.token, args.file_tokens)
