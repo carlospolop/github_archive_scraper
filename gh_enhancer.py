@@ -45,11 +45,11 @@ def check_repos(repos:List[Repository], gh_token_or_file):
                 repo.private = False if repo.deleted else True
 
             else:
-                repo.stars = repo_info['stargazers_count'],
-                repo.forks = repo_info['forks_count'],
-                repo.watchers = repo_info['watchers_count'],
-                repo.archived = repo_info['archived'],
-                repo.disabled = repo_info['disabled'],
+                repo.stars = repo_info['stargazers_count']
+                repo.forks = repo_info['forks_count']
+                repo.watchers = repo_info['watchers_count']
+                repo.archived = repo_info['archived']
+                repo.disabled = repo_info['disabled']
                 repo.deleted = False
                 repo.private = False
             
