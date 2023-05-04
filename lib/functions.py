@@ -16,6 +16,16 @@ GITHUB_API_BASE_URL = "https://api.github.com"
 GITHUB_GRAPHQL_API_URL = "https://api.github.com/graphql"
 
 
+
+def splitlines_generator(text):
+    start = 0
+    for end, char in enumerate(text):
+        if char == '\n':
+            yield text[start:end]
+            start = end + 1
+    if start < len(text):
+        yield text[start:]
+
 def download_file(url, cont=0):
     """
     Download the content of the specified URL.

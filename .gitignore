@@ -166,3 +166,4 @@ urls_list.txt
 users.csv
 repos.csv
 *.csv
+*.json
