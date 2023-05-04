@@ -196,7 +196,7 @@ def main(urls_file_path, output_folder, num_threads):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process GitHub Archive URLs and generate unique repositories and users CSV files.")
     parser.add_argument('-i', '--urls-file', type=str, help="The path of the file containing the GitHub Archive URLs.")
-    parser.add_argument('-o', 'output_folder', type=str, help="The path of the folder where the CSV files will be generated.")
+    parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.")
     parser.add_argument('-t', '--threads', type=int, default=10, help="Number of threads to use for processing URLs.")
 
     args = parser.parse_args()
