@@ -30,8 +30,8 @@ done | shuf > urls_list.txt
 python3 gh_scraper.py -t 10 -i urls_list.txt -o /tmp/gh/
 
 # Get extra information of the logs
-python3 gh_enhancer.py -t 10 -T <github_token> -o /tmp/gh/
+python3 gh_enhancer.py -t 10 -T <github_token> -i /tmp/gh/ -o /tmp/gh/
 
 # Get interesting information
-python3 gh_investigator.py -o /tmp/gh/
+python3 gh_investigator.py -i /tmp/gh/ -o /tmp/gh/
 ```

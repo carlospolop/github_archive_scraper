@@ -183,7 +183,7 @@ def process_github_archive(urls, output_folder, num_threads):
 def main(urls_file_path, output_folder, num_threads):
     """
     Main function to process a file containing GitHub Archive URLs using multi-threading and write the results to CSV files.
-
+    
     :param urls_file_path: The path of the file containing the GitHub Archive URLs.
     :param output_folder: The folder path where the final CSV files will be generated.
     :param num_threads: The number of threads to use for processing URLs.
