@@ -202,7 +202,7 @@ def main(input_file, output_folder, num_threads, gh_token_or_file, file_tokens):
     process_github_assets(output_folder, num_threads, t, repos, "Processing repositories")
     del repos
 
-    users = load_csv_user_file(output_folder)
+    users = load_csv_user_file(input_file)
     UNIQUE_USERS = users
     process_github_assets(output_folder, num_threads, t, users, "Processing users")
 
