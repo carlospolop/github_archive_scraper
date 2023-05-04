@@ -28,6 +28,7 @@ class User:
         self.email = email
         self.company = company
         self.github_star = github_star
+        self.max_repos = 1000
 
     def __eq__(self, other):
         if isinstance(other, User):

@@ -16,14 +16,23 @@ GITHUB_API_BASE_URL = "https://api.github.com"
 GITHUB_GRAPHQL_API_URL = "https://api.github.com/graphql"
 
 
-def download_file(url):
+def download_file(url, cont=0):
     """
     Download the content of the specified URL.
 
     :param url: The URL to download the content from.
     :return: The content of the URL as bytes.
     """
-    response = requests.get(url)
+    try:
+        response = requests.get(url)
+    except Exception:
+        time.sleep(20)
+        if cont < 5:
+            return download_file(url, cont+1)
+        else:
+            print("Error downloading " + url)
+            return None
+
     return response.content
 
 def decompress_gz(content):
@@ -270,8 +279,7 @@ def write_csv_files(repos, users, output_folder):
             users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])            
 
             for user in users.values():
-                # CSV raw limit is 131072 characters, so we truncate the repos_collab field
-                users_csv_writer.writerow([user.username, ','.join(list(user.repos_collab)[:5000]), int(user.deleted), int(user.site_admin), int(user.hireable), user.email, user.company, int(user.github_star)])
+                users_csv_writer.writerow([user.username, ','.join(user.repos_collab), int(user.deleted), int(user.site_admin), int(user.hireable), user.email, user.company, int(user.github_star)])
 
 def load_csv_repo_file(output_folder):
     """

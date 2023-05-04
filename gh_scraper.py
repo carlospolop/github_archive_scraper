@@ -1,9 +1,7 @@
 import argparse
-import csv
 import json
-import os
+import gc
 
-from io import StringIO
 from queue import Queue
 from threading import Thread, Lock
 from tqdm import tqdm
@@ -17,6 +15,7 @@ UNIQUE_USERS = dict()
 REPO_LOCK = Lock()
 USER_LOCK = Lock()
 PROGRESS_BAR_LOCK = Lock()
+
 
 
 def check_repo_in_event(event):
@@ -51,9 +50,8 @@ def check_repo_in_event(event):
         if event["type"] == "DeleteEvent":
             # If aparently private, and deleted main/master branch -> not private, just deleted
             if repo.private == True and event["payload"]["ref_type"] == "branch" and event["payload"]["ref"] in ["master", "main"]:
-                repo.deleted = True
-                repo.private = False
-                UNIQUE_REPOS[repo_full_name] = repo
+                UNIQUE_REPOS[repo_full_name].deleted = True
+                UNIQUE_REPOS[repo_full_name].private = False
 
 
 def check_user_in_event(event):
@@ -73,10 +71,9 @@ def check_user_in_event(event):
             user = UNIQUE_USERS[username]
             
         else:
-
             user = User(
                 username=username,
-                repos_collab=set(),
+                repos_collab=list(),
                 deleted=False,
                 site_admin=False,
                 hireable=False,
@@ -88,12 +85,24 @@ def check_user_in_event(event):
 
 
         if "pull_request" in event and event["pull_request"]["merged_at"]:
-            user.repos_collab.add(event['repo']['name'])
-            UNIQUE_USERS[username] = user
+            repo_name = event['repo']['name']
+            if len(user.repos_collab) < user.max_repos and not repo_name in user.repos_collab:
+                UNIQUE_USERS[username].repos_collab.append(repo_name)
             
         elif event["type"] == "PushEvent":
-            user.repos_collab.add(event['repo']['name'])
-            UNIQUE_USERS[username] = user
+            repo_name = event['repo']['name']
+            if len(user.repos_collab) < user.max_repos and not repo_name in user.repos_collab:
+                UNIQUE_USERS[username].repos_collab.append(repo_name)
+
+
+def splitlines_generator(text):
+    start = 0
+    for end, char in enumerate(text):
+        if char == '\n':
+            yield text[start:end]
+            start = end + 1
+    if start < len(text):
+        yield text[start:]
 
 
 def parse_github_archive(url):
@@ -107,17 +116,25 @@ def parse_github_archive(url):
     global REPO_LOCK, USER_LOCK
 
     content = download_file(url)
+    if not content:
+        return
+        
     decompressed_content = decompress_gz(content)
+    del content
+    
     if decompressed_content is None:
         return
 
-    for line in StringIO(decompressed_content.decode('utf-8')):
+    for line in splitlines_generator(decompressed_content.decode('utf-8')):
+        gc.collect()
         event = json.loads(line)
         with REPO_LOCK:
             check_repo_in_event(event)
         
         with USER_LOCK:
             check_user_in_event(event)
+    
+    del decompressed_content
 
 def worker(queue, progress_bar):
     """
@@ -197,7 +214,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process GitHub Archive URLs and generate unique repositories and users CSV files.")
     parser.add_argument('-i', '--urls-file', type=str, help="The path of the file containing the GitHub Archive URLs.")
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.")
-    parser.add_argument('-t', '--threads', type=int, default=10, help="Number of threads to use for processing URLs.")
+    parser.add_argument('-t', '--threads', type=int, default=4, help="Number of threads to use for processing URLs.")
 
     args = parser.parse_args()
     main(args.urls_file, args.output_folder, args.threads)

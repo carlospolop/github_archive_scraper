@@ -211,7 +211,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process GitHub Archive URLs and generate unique repositories and users CSV files.")
     parser.add_argument('-i', '--input-file', type=str, help="The path of the file containing the csv files.")
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files are generated.")
-    parser.add_argument('-t', '--threads', type=int, default=10, help="Number of threads to use for processing Github assets.")
+    parser.add_argument('-t', '--threads', type=int, default=4, help="Number of threads to use for processing Github assets.")
     
     token_group = parser.add_mutually_exclusive_group(required=True)
     token_group.add_argument('-T', '--token', type=str, help="Github token to use for API calls.")
