@@ -11,14 +11,32 @@ from lib.functions import download_file, decompress_gz, read_urls_from_file, spl
 PROGRESS_BAR_LOCK = Lock()
 
 def write_content_to_file(decompressed_content, output_folder, file_prefix):
-    os.makedirs(output_folder,exist_ok=True)
-    max_size = 100 * 1024 * 1024  # 100 MB
+    """
+    Write the decompressed content to files in the output folder, with each file having a maximum size of 100 MB.
+    The files are split by complete lines if necessary.
+
+    :param decompressed_content: The decompressed content to be written to files.
+    :param output_folder: The folder path where the output files will be generated.
+    :param file_prefix: The prefix to be used for the output file names.
+    """
+    
+    # Create the output folder if it doesn't exist
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Set the maximum file size to 100 MB
+    max_size = 100 * 1024 * 1024
+
+    # Initialize variables for file part number, output content, and size
     part_num = 1
     output = ""
     size = 0
 
+    # Iterate over each line in the decompressed content
     for line in splitlines_generator(decompressed_content):
+        # Calculate the size of the current line in bytes
         line_size = len(line.encode('utf-8'))
+
+        # If the accumulated size exceeds the max size, write the content to a file and reset the output and size
         if size + line_size > max_size:
             file_name = f"{file_prefix}_{part_num}.json"
             output_path = os.path.join(output_folder, file_name)
@@ -27,9 +45,12 @@ def write_content_to_file(decompressed_content, output_folder, file_prefix):
             part_num += 1
             output = ""
             size = 0
+
+        # Append the current line to the output and update the size
         output += line + "\n"
         size += line_size
 
+    # Write any remaining content to a file
     if output:
         file_name = f"{file_prefix}_{part_num}.json"
         output_path = os.path.join(output_folder, file_name)
