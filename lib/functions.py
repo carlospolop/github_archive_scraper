@@ -273,7 +273,7 @@ def write_csv_files(repos, users, output_folder):
                 # CSV raw limit is 131072 characters, so we truncate the repos_collab field
                 users_csv_writer.writerow([user.username, ','.join(list(user.repos_collab)[:5000]), int(user.deleted), int(user.site_admin), int(user.hireable), user.email, user.company, int(user.github_star)])
 
-def load_csv_repo_file(output_folder, as_generator=False):
+def load_csv_repo_file(output_folder):
     """
     Load repositories and users from CSV files in the specified folder.
 
@@ -296,13 +296,34 @@ def load_csv_repo_file(output_folder, as_generator=False):
             owner, repo_name, stars, forks, watchers, deleted, private, archived, disabled = row
             full_name = f"{owner}/{repo_name}"
             repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
-            if as_generator:
-                yield repo
-            else:
-                repos[repo.full_name] = repo
+            repos[repo.full_name] = repo
 
-    if not as_generator:
-        return repos
+    return repos
+
+def load_csv_repo_file_gen(output_folder):
+    """
+    Load repositories and users from CSV files in the specified folder.
+
+    :param output_folder: The folder path where the CSV files are located.
+    :param as_generator: Yield each repository instead of returning a list.
+    :return: A tuple containing two sets: one for repositories and one for users.
+    """
+    repos_csv_path = os.path.join(output_folder, 'repos.csv')
+
+    repos = dict()
+
+    csv.field_size_limit(sys.maxsize)
+
+    with open(repos_csv_path, 'r', newline='', encoding='utf-8') as repos_csv_file:
+        repos_csv_reader = csv.reader(repos_csv_file)
+        next(repos_csv_reader)  # Skip header
+        
+
+        for row in repos_csv_reader:
+            owner, repo_name, stars, forks, watchers, deleted, private, archived, disabled = row
+            full_name = f"{owner}/{repo_name}"
+            repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
+            yield repo
 
 def load_csv_user_file(output_folder, as_generator=False):
     """
@@ -328,10 +349,32 @@ def load_csv_user_file(output_folder, as_generator=False):
             username, repos_collab, deleted, site_admin, hireable, email, company, github_star = row
             repos_collab = repos_collab.split(',')
             user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
-            if as_generator:
-                yield user
-            else:
-                users[user.username] = user
+            users[user.username] = user
 
-    if not as_generator:
-        return users
+    return users
+
+def load_csv_user_file_gen(output_folder):
+    """
+    Load users from CSV files in the specified folder.
+
+    :param output_folder: The folder path where the CSV files are located.
+    :param as_generator: Yield each repository instead of returning a list.
+    :return: A tuple containing two sets: one for repositories and one for users.
+    """
+    users_csv_path = os.path.join(output_folder, 'users.csv')
+
+    repos = dict()
+    users = dict()
+
+    csv.field_size_limit(sys.maxsize)
+
+    with open(users_csv_path, 'r', newline='', encoding='utf-8') as users_csv_file:
+
+        users_csv_reader = csv.reader(users_csv_file)
+        next(users_csv_reader)  # Skip header
+
+        for row in users_csv_reader:
+            username, repos_collab, deleted, site_admin, hireable, email, company, github_star = row
+            repos_collab = repos_collab.split(',')
+            user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
+            yield user

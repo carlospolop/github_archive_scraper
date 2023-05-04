@@ -33,5 +33,5 @@ python3 gh_scraper.py -t 10 urls_list.txt /tmp/
 python3 gh_enhancer.py -t 10 -T <github_token> .
 
 # Get interesting information
-python3 gh_investigator .
+python3 gh_investigator.py .
 ```
