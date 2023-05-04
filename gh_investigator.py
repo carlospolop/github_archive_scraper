@@ -5,6 +5,7 @@ import os
 from lib.functions import load_csv_repo_file_gen, load_csv_user_file_gen
 
 def write_csv(output_folder, file_name, header, data):
+    os.makedirs(output_folder,exist_ok=True)
     file_path = os.path.join(output_folder, file_name)
 
     with open(file_path, 'w', newline='', encoding='utf-8') as csv_file:
