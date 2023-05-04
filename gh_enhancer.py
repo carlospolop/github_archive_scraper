@@ -183,10 +183,11 @@ def process_github_assets(output_folder, num_threads, gh_token_or_file, assets, 
 
 
 
-def main(output_folder, num_threads, gh_token_or_file, file_tokens):
+def main(input_file, output_folder, num_threads, gh_token_or_file, file_tokens):
     """
     Main function to process a file containing GitHub Archive URLs using multi-threading and write the results to CSV files.
 
+    :param output_folder: The folder path with the initial csvs to load.
     :param output_folder: The folder path where the final CSV files will be generated.
     :param num_threads: The number of threads to use for processing URLs.
     :param gh_token_or_file: Github token to use for API calls.
@@ -196,7 +197,7 @@ def main(output_folder, num_threads, gh_token_or_file, file_tokens):
 
     t = gh_token_or_file if gh_token_or_file else file_tokens
 
-    repos = load_csv_repo_file(output_folder)
+    repos = load_csv_repo_file(input_file)
     UNIQUE_REPOS = repos
     process_github_assets(output_folder, num_threads, t, repos, "Processing repositories")
     del repos
@@ -208,6 +209,7 @@ def main(output_folder, num_threads, gh_token_or_file, file_tokens):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process GitHub Archive URLs and generate unique repositories and users CSV files.")
+    parser.add_argument('-i', '--input-file', type=str, help="The path of the file containing the csv files.")
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files are generated.")
     parser.add_argument('-t', '--threads', type=int, default=10, help="Number of threads to use for processing Github assets.")
     
@@ -216,4 +218,4 @@ if __name__ == "__main__":
     token_group.add_argument('-f', '--file-tokens', type=str, help="File containing Github tokens to use for API calls.")
     
     args = parser.parse_args()
-    main(args.output_folder, args.threads, args.token, args.file_tokens)
+    main(args.input_file, args.output_folder, args.threads, args.token, args.file_tokens)
