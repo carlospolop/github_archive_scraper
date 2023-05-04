@@ -124,17 +124,35 @@ def process_github_archive(urls, output_folder, num_threads):
             t.join()
 
 
-def main(urls_file_path, output_folder, num_threads):
+def main(urls_file_path, output_folder, num_threads, one_file_name):
     """
     Main function to download all github archive log files.
     
     :param urls_file_path: The path of the file containing the GitHub Archive URLs.
     :param output_folder: The folder path where the final CSV files will be generated.
     :param num_threads: The number of threads to use for processing URLs.
+    :param one_file_name: The file name of the final json file.
     """
     
     urls = read_urls_from_file(urls_file_path)
     process_github_archive(urls, output_folder, num_threads)
+
+    # Get the list of JSON files in the source directory
+    if one_file_name:
+        json_files = [
+            os.path.join(output_folder, file_name)
+            for file_name in os.listdir(output_folder)
+            if file_name.endswith('.json')
+        ]
+        
+        # Open the output file and write the contents of all JSON files into it
+        with open(os.path.join(output_folder, one_file_name), 'w') as output_file:
+            for json_file_path in json_files:
+                with open(json_file_path, 'r') as input_file:
+                    for line in input_file:
+                        output_file.write(line)
+            os.remove(json_file_path)
+
 
 
 if __name__ == "__main__":
@@ -142,6 +160,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--urls-file', type=str, help="The path of the file containing the GitHub Archive URLs.")
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.")
     parser.add_argument('-t', '--threads', type=int, default=4, help="Number of threads to use for processing URLs.")
+    parser.add_argument('-1', '--one', type=str, default=4, help="Reduce the content to one file indicating the file name.")
 
     args = parser.parse_args()
-    main(args.urls_file, args.output_folder, args.threads)
+    main(args.urls_file, args.output_folder, args.threads, args.one)

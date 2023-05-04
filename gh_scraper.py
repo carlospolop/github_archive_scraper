@@ -121,7 +121,7 @@ def process_github_archive(logs_files, output_folder):
     write_csv_files(UNIQUE_REPOS, UNIQUE_USERS, output_folder)
         
 
-def main(logs_folder, output_folder):
+def main(logs_folder, logs_file, output_folder):
     """
     Main function to process a folder containing GitHub Archive log files and write the results to CSV files.
 
@@ -130,19 +130,27 @@ def main(logs_folder, output_folder):
     """
 
     # Get the list of log files in the logs_folder with a .json extension
-    logs_files = [
-        os.path.join(logs_folder, file_name)
-        for file_name in os.listdir(logs_folder)
-        if file_name.endswith(".json")
-    ]
+    if logs_folder:
+        logs_files = [
+            os.path.join(logs_folder, file_name)
+            for file_name in os.listdir(logs_folder)
+            if file_name.endswith(".json")
+        ]
+    else:
+        logs_files = [logs_file]
 
     # Process the log files and generate the output CSV files
     process_github_archive(logs_files, output_folder)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process GitHub Archive URLs and generate unique repositories and users CSV files.")
-    parser.add_argument('-i', '--logs-folder', type=str, help="The path of the fodlder containing the GitHub Archive logs.")
+    
+    # Create a mutually exclusive group for input options
+    input_group = parser.add_mutually_exclusive_group(required=True)
+    input_group.add_argument('-i', '--logs-folder', type=str, help="The path of the folder containing the GitHub Archive logs.")
+    input_group.add_argument('-f', '--logs-file', type=str, help="The path of the file containing the GitHub Archive logs.")
+    
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.")
 
     args = parser.parse_args()
-    main(args.logs_folder, args.output_folder)
+    main(args.logs_folder, args.logs_file, args.output_folder)
