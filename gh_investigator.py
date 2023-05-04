@@ -161,7 +161,7 @@ def main(output_folder):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use the generated CSV files to get interesting information.")
-    parser.add_argument('output_folder', type=str, help="The path of the folder where the CSV files are generated.")
+    parser.add_argument('-o', 'output_folder', type=str, help="The path of the folder where the CSV files are generated.")
 
     args = parser.parse_args()
     main(args.output_folder)

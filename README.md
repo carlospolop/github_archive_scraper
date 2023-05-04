@@ -27,11 +27,11 @@ for year in {2015.."$current_year"}; do
 done | shuf > urls_list.txt
 
 # Download and scrape the logs
-python3 gh_scraper.py -t 10 urls_list.txt /tmp/
+python3 gh_scraper.py -t 10 -i urls_list.txt -o /tmp/gh/
 
 # Get extra information of the logs
-python3 gh_enhancer.py -t 10 -T <github_token> .
+python3 gh_enhancer.py -t 10 -T <github_token> -o /tmp/gh/
 
 # Get interesting information
-python3 gh_investigator.py .
+python3 gh_investigator.py -o /tmp/gh/
 ```
