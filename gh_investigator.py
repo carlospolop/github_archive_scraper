@@ -143,27 +143,41 @@ def write_company_users(output_folder, users):
     ]
     write_csv(output_folder, 'users_company.csv', header, data)
 
-def main(input_file, output_folder):
-    write_sort_repos_by_stars(output_folder, load_csv_repo_file_gen(input_file))
-    write_sort_repos_by_forks(output_folder, load_csv_repo_file_gen(input_file))
-    write_sort_repos_by_watchers(output_folder, load_csv_repo_file_gen(input_file))
-    write_private_repos(output_folder, load_csv_repo_file_gen(input_file))
-    write_deleted_repos(output_folder, load_csv_repo_file_gen(input_file))
-    write_archived_repos(output_folder, load_csv_repo_file_gen(input_file))
-    write_disabled_repos(output_folder, load_csv_repo_file_gen(input_file))
+def main(users_file, repos_file, output_folder):
+    if repos_file:
+        write_sort_repos_by_stars(output_folder, load_csv_repo_file_gen(repos_file))
+        write_sort_repos_by_forks(output_folder, load_csv_repo_file_gen(repos_file))
+        write_sort_repos_by_watchers(output_folder, load_csv_repo_file_gen(repos_file))
+        write_private_repos(output_folder, load_csv_repo_file_gen(repos_file))
+        write_deleted_repos(output_folder, load_csv_repo_file_gen(repos_file))
+        write_archived_repos(output_folder, load_csv_repo_file_gen(repos_file))
+        write_disabled_repos(output_folder, load_csv_repo_file_gen(repos_file))
 
-    write_site_admin_users(output_folder, load_csv_user_file_gen(input_file))
-    write_deleted_users(output_folder, load_csv_user_file_gen(input_file))
-    write_hireable_users(output_folder, load_csv_user_file_gen(input_file))
-    write_github_star_users(output_folder, load_csv_user_file_gen(input_file))
-    write_email_users(output_folder, load_csv_user_file_gen(input_file))
-    write_company_users(output_folder, load_csv_user_file_gen(input_file))
+    if users_file:
+        write_site_admin_users(output_folder, load_csv_user_file_gen(users_file))
+        write_deleted_users(output_folder, load_csv_user_file_gen(users_file))
+        write_hireable_users(output_folder, load_csv_user_file_gen(users_file))
+        write_github_star_users(output_folder, load_csv_user_file_gen(users_file))
+        write_email_users(output_folder, load_csv_user_file_gen(users_file))
+        write_company_users(output_folder, load_csv_user_file_gen(users_file))
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use the generated CSV files to get interesting information.")
-    parser.add_argument('-i', '--input-file', type=str, help="The path of the file containing the csv files.")
-    parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.")
+    parser.add_argument('-u', '--users-file', type=str, help="The path of the file containing the users csv files.")
+    parser.add_argument('-r', '--repos-file', type=str, help="The path of the file containing the repos csv files.")
+    parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.", required=True)
 
     args = parser.parse_args()
-    main(args.input_file, args.output_folder)
+    if args.users_file is None and args.repos_file is None:
+        parser.error("At least one of --users-file or --repos-file is required.")
+    
+    # If users_file, check the file exists
+    if args.users_file is not None and not os.path.isfile(args.users_file):
+        parser.error("The file specified by --users-file does not exist.")
+    
+    # If repos_file, check the file exists
+    if args.repos_file is not None and not os.path.isfile(args.repos_file):
+        parser.error("The file specified by --repos-file does not exist.")
+
+    main(args.users_file, args.repos_file, args.output_folder)

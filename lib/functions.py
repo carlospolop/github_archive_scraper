@@ -291,48 +291,18 @@ def write_csv_files(repos, users, output_folder):
             for user in users.values():
                 users_csv_writer.writerow([user.username, ','.join(user.repos_collab), int(user.deleted), int(user.site_admin), int(user.hireable), user.email, user.company, int(user.github_star)])
 
-def load_csv_repo_file(output_folder):
+
+def load_csv_repo_file_gen(file_path):
     """
     Load repositories and users from CSV files in the specified folder.
 
-    :param output_folder: The folder path where the CSV files are located.
-    :param as_generator: Yield each repository instead of returning a list.
+    :param file_path: The file path where the repos CSV files are located.
     :return: A tuple containing two sets: one for repositories and one for users.
     """
-    repos_csv_path = os.path.join(output_folder, 'repos.csv')
-
-    repos = dict()
 
     csv.field_size_limit(sys.maxsize)
 
-    with open(repos_csv_path, 'r', newline='', encoding='utf-8') as repos_csv_file:
-        repos_csv_reader = csv.reader(repos_csv_file)
-        next(repos_csv_reader)  # Skip header
-        
-
-        for row in repos_csv_reader:
-            owner, repo_name, stars, forks, watchers, deleted, private, archived, disabled = row
-            full_name = f"{owner}/{repo_name}"
-            repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
-            repos[repo.full_name] = repo
-
-    return repos
-
-def load_csv_repo_file_gen(output_folder):
-    """
-    Load repositories and users from CSV files in the specified folder.
-
-    :param output_folder: The folder path where the CSV files are located.
-    :param as_generator: Yield each repository instead of returning a list.
-    :return: A tuple containing two sets: one for repositories and one for users.
-    """
-    repos_csv_path = os.path.join(output_folder, 'repos.csv')
-
-    repos = dict()
-
-    csv.field_size_limit(sys.maxsize)
-
-    with open(repos_csv_path, 'r', newline='', encoding='utf-8') as repos_csv_file:
+    with open(file_path, 'r', newline='', encoding='utf-8') as repos_csv_file:
         repos_csv_reader = csv.reader(repos_csv_file)
         next(repos_csv_reader)  # Skip header
         
@@ -343,50 +313,36 @@ def load_csv_repo_file_gen(output_folder):
             repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
             yield repo
 
-def load_csv_user_file(output_folder, as_generator=False):
+def process_repos_in_batches(file_path, batch_size=200):
+    cont = 0
+    batch_of_repos = []
+    for repo in load_csv_repo_file_gen(file_path):
+        batch_of_repos.append(repo)
+        
+        if len(batch_of_repos) == batch_size:
+            cont += 1
+            print(f"Users batch {cont}")
+            yield batch_of_repos
+
+            batch_of_repos.clear()
+
+    # Process the remaining repos (less than 200) if any
+    if batch_of_repos:
+        print("Final batch")
+        yield batch_of_repos
+
+
+def load_csv_user_file_gen(file_path):
     """
     Load users from CSV files in the specified folder.
 
-    :param output_folder: The folder path where the CSV files are located.
-    :param as_generator: Yield each repository instead of returning a list.
+    :param file_path: The file path where the users CSV files are located.
     :return: A tuple containing two sets: one for repositories and one for users.
     """
-    users_csv_path = os.path.join(output_folder, 'users.csv')
-
-    repos = dict()
-    users = dict()
 
     csv.field_size_limit(sys.maxsize)
 
-    with open(users_csv_path, 'r', newline='', encoding='utf-8') as users_csv_file:
-
-        users_csv_reader = csv.reader(users_csv_file)
-        next(users_csv_reader)  # Skip header
-
-        for row in users_csv_reader:
-            username, repos_collab, deleted, site_admin, hireable, email, company, github_star = row
-            repos_collab = repos_collab.split(',')
-            user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
-            users[user.username] = user
-
-    return users
-
-def load_csv_user_file_gen(output_folder):
-    """
-    Load users from CSV files in the specified folder.
-
-    :param output_folder: The folder path where the CSV files are located.
-    :param as_generator: Yield each repository instead of returning a list.
-    :return: A tuple containing two sets: one for repositories and one for users.
-    """
-    users_csv_path = os.path.join(output_folder, 'users.csv')
-
-    repos = dict()
-    users = dict()
-
-    csv.field_size_limit(sys.maxsize)
-
-    with open(users_csv_path, 'r', newline='', encoding='utf-8') as users_csv_file:
+    with open(file_path, 'r', newline='', encoding='utf-8') as users_csv_file:
 
         users_csv_reader = csv.reader(users_csv_file)
         next(users_csv_reader)  # Skip header
@@ -396,3 +352,28 @@ def load_csv_user_file_gen(output_folder):
             repos_collab = repos_collab.split(',')
             user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
             yield user
+
+def process_users_in_batches(file_path, batch_size=200):
+    cont = 0
+    batch_of_users = []
+    for repo in load_csv_user_file_gen(file_path):
+        batch_of_users.append(repo)
+        
+        if len(batch_of_users) == batch_size:
+            cont += 1
+            print(f"Users batch {cont}")
+            yield batch_of_users
+
+            batch_of_users.clear()
+
+    # Process the remaining repos (less than 200) if any
+    if batch_of_users:
+        print("Final batch")
+        yield batch_of_users
+
+def count_lines(file_path):
+    with open(file_path, 'r') as file:
+        lines = 0
+        for _ in file:
+            lines += 1
+    return lines

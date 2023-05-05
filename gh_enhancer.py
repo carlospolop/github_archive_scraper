@@ -1,23 +1,15 @@
 import argparse
+import csv
+import os
 
-from queue import Queue
-from threading import Thread, Lock
-from tqdm import tqdm
 from typing import List
 
 from lib.classes import Repository, User
-from lib.functions import get_repos_info, get_users_info, load_csv_repo_file, load_csv_user_file, write_csv_files
-
-
-UNIQUE_REPOS = dict()
-UNIQUE_USERS = dict()
-REPO_LOCK = Lock()
-USER_LOCK = Lock()
-PROGRESS_BAR_LOCK = Lock()
+from lib.functions import get_repos_info, get_users_info, process_repos_in_batches, process_users_in_batches, count_lines
 
 
 
-def check_repos(repos:List[Repository], gh_token_or_file):
+def check_repos(repos:List[Repository], gh_token_or_file, csv_fd):
     """
     Get info about the Github repo
 
@@ -25,74 +17,82 @@ def check_repos(repos:List[Repository], gh_token_or_file):
     :return: None
     """
 
-    global UNIQUE_REPOS, REPO_LOCK
 
     repos_info = get_repos_info(repos, gh_token_or_file)
 
     if not repos_info:
         return
 
-    with REPO_LOCK:
-        for repo_full_name, repo_info in repos_info.items():
-            repo = UNIQUE_REPOS[repo_full_name]
-            if repo_info["inexistent"]:
-                repo.stars = -1
-                repo.forks = -1
-                repo.watchers = -1
-                repo.archived = False
-                repo.disabled = False
-                repo.deleted = repo.deleted
-                repo.private = False if repo.deleted else True
+    for repo_full_name, repo_info in repos_info.items():
 
-            else:
-                repo.stars = repo_info['stargazers_count']
-                repo.forks = repo_info['forks_count']
-                repo.watchers = repo_info['watchers_count']
-                repo.archived = repo_info['archived']
-                repo.disabled = repo_info['disabled']
-                repo.deleted = False
-                repo.private = False
-            
-            UNIQUE_REPOS[repo.full_name] = repo
+        for repo in repos:
+            if repo.full_name == repo_full_name:
+                break
+        
+        if repo_info["inexistent"]:
+            repo.stars = -1
+            repo.forks = -1
+            repo.watchers = -1
+            repo.archived = False
+            repo.disabled = False
+            repo.deleted = repo.deleted
+            repo.private = False if repo.deleted else True
+
+        else:
+            repo.stars = repo_info['stargazers_count']
+            repo.forks = repo_info['forks_count']
+            repo.watchers = repo_info['watchers_count']
+            repo.archived = repo_info['archived']
+            repo.disabled = repo_info['disabled']
+            repo.deleted = False
+            repo.private = False
+        
+            owner, repo_name = repo.full_name.split('/')
+            csv_fd.writerow([owner, repo_name, repo.stars, repo.forks, repo.watchers, int(repo.deleted), int(repo.private), int(repo.archived), int(repo.disabled)])
 
 
-def check_users(users: List[User], gh_token_or_file):
+def check_users(users: List[User], gh_token_or_file, csv_fd):
     """
-    Get info about the Github usernames
+    Write delailed info about the Github usernames
 
     :param users: A lis of User objects to check.
+    :param gh_token_or_file: Github token or file with tokens.
+    :param csv_fd: The fd to write the information extracted.
     :return: None
     """
-
-    global UNIQUE_USERS, USER_LOCK
 
     users_info = get_users_info(users, gh_token_or_file)
 
     if not users_info:
         return
     
-    with USER_LOCK:
-        for username, user_info in users_info.items():
-            user = UNIQUE_USERS[username]
-            if user_info["inexistent"]:
-                user.deleted=True
+    for username, user_info in users_info.items():
+        # Get original csv user
+        for user in users:
+            if user.username == username:
+                break
+        
+        if user_info["inexistent"]:
+            user.deleted=True
 
-            else:
-                user.site_admin=user_info['site_admin']
-                user.hireable=user_info['hireable']
-                user.email=user_info['email']
-                user.company=user_info['company']
-                user.github_star=user_info['github_star']
+        else:
+            user.site_admin=user_info['site_admin']
+            user.hireable=user_info['hireable']
+            user.email=user_info['email']
+            user.company=user_info['company']
+            user.github_star=user_info['github_star']        
 
-        UNIQUE_USERS[user.username] = user
+        csv_fd.writerow([user.username, ','.join(user.repos_collab), int(user.deleted), int(user.site_admin), int(user.hireable), user.email, user.company, int(user.github_star)])
 
 
-def parse_github_assets(assets, gh_token_or_file):
+
+def parse_github_assets(assets, gh_token_or_file, csv_fd):
     """
     Parse a single GitHub assets and obtain details about it.
 
     :param assets: The Github assets.
-    :return: A tuple containing two sets: unique repositories and unique users.
+    :param gh_token_or_file: Github token or file with tokens.
+    :param csv_fd: The fd to write the information extracted.
     """
 
     users = []
@@ -110,112 +110,74 @@ def parse_github_assets(assets, gh_token_or_file):
         print(f"Somehow there are users and repos in the same batch. users: {len(users)} repos: {len(repos)}")
 
     if len(users) > len(repos):
-        check_users(users, gh_token_or_file)
+        check_users(users, gh_token_or_file, csv_fd)
 
     else:
-        check_repos(repos, gh_token_or_file)
+        check_repos(repos, gh_token_or_file, csv_fd)
         
 
-def worker(queue, progress_bar, gh_token_or_file):
+def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, batch_size):
     """
-    Worker function for threads. Continuously processes URLs from the queue until a sentinel value (None) is encountered.
+    Main function to process csvs containing GitHub users and repos and write the results to CSV files.
 
-    :param queue: A queue containing GitHub Archive URLs to process.
-    :param progress_bar: A tqdm progress bar object to update as tasks are completed.
-    """
-
-    global PROGRESS_BAR_LOCK
-
-    while True:
-        asset = queue.get()
-        if asset is None:
-            break
-        parse_github_assets(asset, gh_token_or_file)
-        
-        with PROGRESS_BAR_LOCK:
-            progress_bar.update()
-            
-        queue.task_done()
-        
-
-
-def process_github_assets(output_folder, num_threads, gh_token_or_file, assets, title):
-    """
-    Process a list of GitHub assets using multi-threading, extract details about repositories and users,
-    and write the results to CSV files in the specified output folder.
-
+    :param users_file: The folder path with the initial users csvs to load.
+    :param repos_file: The folder path with the initial repos csvs to load.
     :param output_folder: The folder path where the final CSV files will be generated.
-    :param num_threads: The number of threads to use for processing URLs.
-    :param assets: Assets to process.
-    :param title: Title for the progress bar.
-    """
-
-    queue = Queue()
-    batch_size = 200
-
-    for i in range(0, len(assets), batch_size):
-        users_batch = list(assets.values())[i:i + batch_size]
-        queue.put(users_batch)
-
-    # Create and start worker threads with a progress bar
-    with tqdm(total=int(len(assets)/batch_size), desc=title) as progress_bar:
-        threads = []
-        for _ in range(num_threads):
-            t = Thread(target=worker, args=(queue, progress_bar, gh_token_or_file))
-            t.start()
-            threads.append(t)
-
-        # Wait for all tasks in the queue to be completed
-        queue.join()
-
-        # Signal worker threads to exit by adding sentinel values (None) to the queue
-        for _ in range(num_threads):
-            queue.put(None)
-
-        # Wait for all worker threads to finish
-        for t in threads:
-            t.join()
-
-    if "repo" in title.lower():
-        write_csv_files(UNIQUE_REPOS, None, output_folder)
-    else:
-        write_csv_files(None, UNIQUE_USERS, output_folder)
-
-
-
-def main(input_file, output_folder, num_threads, gh_token_or_file, file_tokens):
-    """
-    Main function to process a file containing GitHub Archive URLs using multi-threading and write the results to CSV files.
-
-    :param output_folder: The folder path with the initial csvs to load.
-    :param output_folder: The folder path where the final CSV files will be generated.
-    :param num_threads: The number of threads to use for processing URLs.
     :param gh_token_or_file: Github token to use for API calls.
     """
     
-    global UNIQUE_REPOS, UNIQUE_USERS
-
     t = gh_token_or_file if gh_token_or_file else file_tokens
 
-    repos = load_csv_repo_file(input_file)
-    UNIQUE_REPOS = repos
-    process_github_assets(output_folder, num_threads, t, repos, "Processing repositories")
-    del repos
+    os.makedirs(output_folder, exist_ok=True)
 
-    users = load_csv_user_file(input_file)
-    UNIQUE_USERS = users
-    process_github_assets(output_folder, num_threads, t, users, "Processing users")
+    if repos_file:
+        num_lines = count_lines(repos_file)
+        for batch_repos in process_repos_in_batches(repos_file, batch_size):
+            repos_csv_path = os.path.join(output_folder, 'repos.csv')
+            
+            with open(repos_csv_path, 'w', newline='', encoding='utf-8') as repos_csv_file:
+                repos_csv_writer = csv.writer(repos_csv_file)
+                repos_csv_writer.writerow(['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
+
+                print(f"Processing {num_lines} repositories")
+                parse_github_assets(batch_repos, t, repos_csv_writer)
+        
+
+    if users_file:
+        num_lines = count_lines(users_file)
+        for batch_users in process_users_in_batches(users_file, batch_size):
+            users_csv_path = os.path.join(output_folder, 'users.csv')
+
+            with open(users_csv_path, 'w', newline='', encoding='utf-8') as users_csv_file:
+                users_csv_writer = csv.writer(users_csv_file)
+                users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])    
+
+                print(f"Processing {num_lines} users")
+                parse_github_assets(batch_users, t, users_csv_writer)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process GitHub Archive URLs and generate unique repositories and users CSV files.")
-    parser.add_argument('-i', '--input-file', type=str, help="The path of the file containing the csv files.")
-    parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files are generated.")
-    parser.add_argument('-t', '--threads', type=int, default=4, help="Number of threads to use for processing Github assets.")
+    parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files are generated.", required=True)
+    parser.add_argument('-u', '--users-file', type=str, help="The path of the file containing the users csv files.")
+    parser.add_argument('-r', '--repos-file', type=str, help="The path of the file containing the repos csv files.")
+    parser.add_argument('-b', '--batch-size', type=int, default=200, help="The size of the batch to ask Github graphql API at the same time.")
     
     token_group = parser.add_mutually_exclusive_group(required=True)
     token_group.add_argument('-T', '--token', type=str, help="Github token to use for API calls.")
     token_group.add_argument('-f', '--file-tokens', type=str, help="File containing Github tokens to use for API calls.")
     
     args = parser.parse_args()
-    main(args.input_file, args.output_folder, args.threads, args.token, args.file_tokens)
+
+    if args.users_file is None and args.repos_file is None:
+        parser.error("At least one of --users-file or --repos-file is required.")
+    
+    # If users_file, check the file exists
+    if args.users_file is not None and not os.path.isfile(args.users_file):
+        parser.error("The file specified by --users-file does not exist.")
+    
+    # If repos_file, check the file exists
+    if args.repos_file is not None and not os.path.isfile(args.repos_file):
+        parser.error("The file specified by --repos-file does not exist.")
+
+    main(args.users_file, args.repos_file, args.output_folder, args.token, args.file_tokens, args.batch_size)

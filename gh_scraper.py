@@ -126,6 +126,7 @@ def main(logs_folder, logs_file, output_folder):
     Main function to process a folder containing GitHub Archive log files and write the results to CSV files.
 
     :param logs_folder: The folder path containing the GitHub Archive log files.
+    :param logs_file: The file path containing all the GitHub Archive logs.
     :param output_folder: The folder path where the final CSV files will be generated.
     """
 

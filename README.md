@@ -15,8 +15,8 @@ python3 gh_downloader.py -t 5 -i urls_list.txt -o /tmp/gh/jsons/
 python3 gh_scraper.py -i /tmp/gh/jsons/ -o /tmp/gh/
 
 # Get extra information of the logs
-python3 gh_enhancer.py -t 10 -T <github_token> -i /tmp/gh/ -o /tmp/gh/
+python3 gh_enhancer.py -T <github_token> -u /tmp/gh/users.csv -r /tmp/gh/repos.csv -o /tmp/gh/
 
 # Get interesting information
-python3 gh_investigator.py -i /tmp/gh/ -o /tmp/gh/
+python3 gh_investigator.py -u /tmp/gh/users.csv -r /tmp/gh/repos.csv -o /tmp/gh/
 ```
