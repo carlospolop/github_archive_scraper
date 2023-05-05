@@ -143,7 +143,20 @@ def write_company_users(output_folder, users):
     ]
     write_csv(output_folder, 'users_company.csv', header, data)
 
-def main(users_file, repos_file, output_folder):
+def main(users_file, repos_file, logs_folder, output_folder):
+    if logs_folder:
+        temp_users_file = os.path.join(output_folder, "users.csv")
+        if os.path.isfile(temp_users_file):
+            users_file = temp_users_file
+        
+        temp_repos_file = os.path.join(output_folder, "repos.csv")
+        if os.path.isfile(temp_repos_file):
+            repos_file = temp_repos_file
+    
+    if not repos_file and not users_file:
+        print("No input files found")
+        return
+
     if repos_file:
         write_sort_repos_by_stars(output_folder, load_csv_repo_file_gen(repos_file))
         write_sort_repos_by_forks(output_folder, load_csv_repo_file_gen(repos_file))
@@ -166,10 +179,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Use the generated CSV files to get interesting information.")
     parser.add_argument('-u', '--users-file', type=str, help="The path of the file containing the users csv files.")
     parser.add_argument('-r', '--repos-file', type=str, help="The path of the file containing the repos csv files.")
+    parser.add_argument('-i', '--logs-folder', type=str, help="The path of the folder containing the users and/or repos csvs.")
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.", required=True)
 
     args = parser.parse_args()
-    if args.users_file is None and args.repos_file is None:
+    if args.users_file is None and args.repos_file is None and args.logs_folder is None:
         parser.error("At least one of --users-file or --repos-file is required.")
     
     # If users_file, check the file exists
@@ -179,5 +193,9 @@ if __name__ == "__main__":
     # If repos_file, check the file exists
     if args.repos_file is not None and not os.path.isfile(args.repos_file):
         parser.error("The file specified by --repos-file does not exist.")
+    
+    # If logs_folder, check the folder exists
+    if args.logs_folder is not None and not os.path.isdir(args.logs_folder):
+        parser.error("The folder specified by --logs-folder does not exist.")
 
-    main(args.users_file, args.repos_file, args.output_folder)
+    main(args.users_file, args.repos_file, args.logs_folder, args.output_folder)
