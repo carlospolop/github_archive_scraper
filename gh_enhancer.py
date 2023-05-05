@@ -131,8 +131,8 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
     os.makedirs(output_folder, exist_ok=True)
 
     if repos_file:
-        print(f"Processing {num_lines} repositories")
         num_lines = count_lines(repos_file)
+        print(f"Processing {num_lines} repositories")
         for batch_repos in process_repos_in_batches(repos_file, batch_size):
             repos_csv_path = os.path.join(output_folder, 'repos.csv')
             
