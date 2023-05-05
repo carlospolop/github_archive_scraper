@@ -184,7 +184,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     if args.users_file is None and args.repos_file is None and args.logs_folder is None:
-        parser.error("At least one of --users-file or --repos-file is required.")
+        parser.error("At least one of --users-file or --repos-file or --logs-folder is required.")
     
     # If users_file, check the file exists
     if args.users_file is not None and not os.path.isfile(args.users_file):
