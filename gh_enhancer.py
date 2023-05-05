@@ -47,8 +47,8 @@ def check_repos(repos:List[Repository], gh_token_or_file, csv_fd):
             repo.deleted = False
             repo.private = False
         
-            owner, repo_name = repo.full_name.split('/')
-            csv_fd.writerow([owner, repo_name, repo.stars, repo.forks, repo.watchers, int(repo.deleted), int(repo.private), int(repo.archived), int(repo.disabled)])
+        owner, repo_name = repo.full_name.split('/')
+        csv_fd.writerow([owner, repo_name, repo.stars, repo.forks, repo.watchers, int(repo.deleted), int(repo.private), int(repo.archived), int(repo.disabled)])
 
 
 def check_users(users: List[User], gh_token_or_file, csv_fd):
