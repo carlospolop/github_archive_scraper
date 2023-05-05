@@ -125,6 +125,13 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
 
     if response.status_code == 200:
         result = json.loads(response.text)
+
+        if "rate limit" in str(result.get("errors", {})).lower():
+            if old_key:
+                print("Rate limit exceeded, sleeping 5 mins")
+                time.sleep(5*60)
+            return get_repos_info(repos, gh_token_or_file, old_key=gh_token)
+        
         data = result['data']
 
         repos_info = dict()
@@ -208,6 +215,13 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
 
     if response.status_code == 200:
         result = json.loads(response.text)
+        
+        if "rate limit" in str(result.get("errors", {})).lower():
+            if old_key:
+                print("Rate limit exceeded, sleeping 5 mins")
+                time.sleep(5*60)
+            return get_users_info(users, gh_token_or_file, old_key=gh_token)
+                
         data = result['data']
 
         users_info = dict()
@@ -243,7 +257,7 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
             if old_key:
                 print("Rate limit exceeded, sleeping 5 mins")
                 time.sleep(5*60)
-            return get_repos_info(users, gh_token_or_file, old_key=gh_token)
+            return get_users_info(users, gh_token_or_file, old_key=gh_token)
         
         else:
             print(f"Request failed with status code {response.status_code} with text {response.text}")

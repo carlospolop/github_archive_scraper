@@ -131,6 +131,7 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
     os.makedirs(output_folder, exist_ok=True)
 
     if repos_file:
+        print(f"Processing {num_lines} repositories")
         num_lines = count_lines(repos_file)
         for batch_repos in process_repos_in_batches(repos_file, batch_size):
             repos_csv_path = os.path.join(output_folder, 'repos.csv')
@@ -138,13 +139,13 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
             with open(repos_csv_path, 'w', newline='', encoding='utf-8') as repos_csv_file:
                 repos_csv_writer = csv.writer(repos_csv_file)
                 repos_csv_writer.writerow(['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
-
-                print(f"Processing {num_lines} repositories")
+                
                 parse_github_assets(batch_repos, t, repos_csv_writer)
         
 
     if users_file:
         num_lines = count_lines(users_file)
+        print(f"Processing {num_lines} users")
         for batch_users in process_users_in_batches(users_file, batch_size):
             users_csv_path = os.path.join(output_folder, 'users.csv')
 
@@ -152,7 +153,6 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
                 users_csv_writer = csv.writer(users_csv_file)
                 users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])    
 
-                print(f"Processing {num_lines} users")
                 parse_github_assets(batch_users, t, users_csv_writer)
 
 
