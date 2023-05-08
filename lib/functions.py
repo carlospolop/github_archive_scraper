@@ -8,6 +8,7 @@ import sys
 import time
 
 from typing import List
+from datetime import datetime
 
 from .classes import Repository, User
 
@@ -16,6 +17,10 @@ GITHUB_API_BASE_URL = "https://api.github.com"
 GITHUB_GRAPHQL_API_URL = "https://api.github.com/graphql"
 
 
+def now_str():
+    now = datetime.now()
+    current_time = now.strftime("%H:%M:%S")
+    return current_time
 
 def splitlines_generator(text):
     start = 0
@@ -118,7 +123,7 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
         response = requests.post(GITHUB_GRAPHQL_API_URL, json={"query": query}, headers=headers)
     except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError):
         if cont > 3:
-            print(f"Too many retries with {repos_full_names}, skipping")
+            print(f"{now_str()} Too many retries with {repos_full_names}, skipping")
             return None
         time.sleep(30)
         return get_repos_info(repos, gh_token_or_file, cont=cont+1)
@@ -128,7 +133,7 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
 
         if "rate limit" in str(result.get("errors", {})).lower():
             if old_key:
-                print(f"Rate limit exceeded with token {gh_token}, sleeping 5 mins")
+                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
                 time.sleep(5*60)
             return get_repos_info(repos, gh_token_or_file, old_key=gh_token)
         
@@ -165,7 +170,7 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
     else:
         if "rate limit" in str(response.text):
             if old_key:
-                print(f"Rate limit exceeded with token {gh_token}, sleeping 5 mins")
+                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
                 time.sleep(5*60)
             return get_repos_info(repos, gh_token_or_file, old_key=gh_token)
         
@@ -208,7 +213,7 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
         response = requests.post(GITHUB_GRAPHQL_API_URL, json={"query": query}, headers=headers)
     except (requests.exceptions.ChunkedEncodingError, requests.exceptions.ConnectionError):
         if cont > 3:
-            print(f"Too many retries with {usernames}, skipping")
+            print(f"{now_str()} Too many retries with {usernames}, skipping")
             return None
         time.sleep(30)
         return get_users_info(users, gh_token_or_file, cont=cont+1)
@@ -218,7 +223,7 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
         
         if "rate limit" in str(result.get("errors", {})).lower():
             if old_key:
-                print(f"Rate limit exceeded with token {gh_token}, sleeping 5 mins")
+                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
                 time.sleep(5*60)
             return get_users_info(users, gh_token_or_file, old_key=gh_token)
                 
@@ -247,7 +252,7 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
     
     elif response.status_code == 502:
         if cont > 3:
-            print(f"Too many 502 with {usernames}, skipping")
+            print(f"{now_str()} Too many 502 with {usernames}, skipping")
             return None
         time.sleep(30)
         return get_users_info(users, gh_token_or_file, cont=cont+1)
@@ -255,12 +260,12 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
     else:
         if "rate limit" in str(response.text):
             if old_key:
-                print(f"Rate limit exceeded with token {gh_token}, sleeping 5 mins")
+                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
                 time.sleep(5*60)
             return get_users_info(users, gh_token_or_file, old_key=gh_token)
         
         else:
-            print(f"Request failed with status code {response.status_code} with text {response.text}")
+            print(f"{now_str()} Request failed with status code {response.status_code} with text {response.text}")
             return None
 
 def read_urls_from_file(file_path):
@@ -335,14 +340,14 @@ def process_repos_in_batches(file_path, batch_size=200):
         
         if len(batch_of_repos) == batch_size:
             cont += 1
-            print(f"Users batch {cont}")
+            print(f"{now_str()} Repos batch {cont}")
             yield batch_of_repos
 
             batch_of_repos.clear()
 
     # Process the remaining repos (less than 200) if any
     if batch_of_repos:
-        print("Final batch")
+        print(f"{now_str()} Final batch")
         yield batch_of_repos
 
 
@@ -375,14 +380,14 @@ def process_users_in_batches(file_path, batch_size=200):
         
         if len(batch_of_users) == batch_size:
             cont += 1
-            print(f"Users batch {cont}")
+            print(f"{now_str()} Users batch {cont}")
             yield batch_of_users
 
             batch_of_users.clear()
 
     # Process the remaining repos (less than 200) if any
     if batch_of_users:
-        print("Final batch")
+        print(f"{now_str()} Final batch")
         yield batch_of_users
 
 def count_lines(file_path):
