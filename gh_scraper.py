@@ -94,7 +94,11 @@ def parse_github_archive(file_path):
     with open(file_path, 'rb') as f:
         for line in f:
             # Load the event as a JSON object
-            event = json.loads(line)
+            try:
+                event = json.loads(line)
+            except json.decoder.JSONDecodeError:
+                print(f"Error decoding JSON in file {file_path} on line {line}.")
+                continue
 
             # Check the repository in the event and update the UNIQUE_REPOS dictionary
             check_repo_in_event(event)
