@@ -298,7 +298,17 @@ def write_csv_files(repos, users, output_folder):
             repos_csv_writer.writerow(['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
             for repo in repos.values():
                 owner, repo_name = repo.full_name.split('/')
-                repos_csv_writer.writerow([owner, repo_name, repo.stars, repo.forks, repo.watchers, int(repo.deleted), int(repo.private), int(repo.archived), int(repo.disabled)])
+                repos_csv_writer.writerow([
+                    owner, 
+                    repo_name, 
+                    repo.stars if repo.stars > 0 else "",
+                    repo.forks if repo.forks > 0 else "",
+                    repo.watchers if repo.watchers > 0 else "",
+                    int(repo.deleted) if repo.deleted else "",
+                    int(repo.private) if repo.private else "", 
+                    int(repo.archived) if repo.archived else "", 
+                    int(repo.disabled) if repo.disabled else ""
+                ])
 
     if users:
         users_csv_path = os.path.join(output_folder, 'users.csv')

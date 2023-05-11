@@ -36,9 +36,9 @@ def check_repo_in_event(event):
         if not repo_full_name in UNIQUE_REPOS:
             UNIQUE_REPOS[repo_full_name] = Repository(
                 full_name=repo_full_name,
-                stars=-1,
-                forks=-1,
-                watchers=-1,
+                stars=0,
+                forks=0,
+                watchers=0,
                 deleted=False,
                 private=False,
                 archived=False,
