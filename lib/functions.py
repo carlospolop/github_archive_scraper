@@ -308,7 +308,15 @@ def write_csv_files(repos, users, output_folder):
             users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])            
 
             for user in users.values():
-                users_csv_writer.writerow([user.username, ','.join(user.repos_collab), int(user.deleted), int(user.site_admin), int(user.hireable), user.email, user.company, int(user.github_star)])
+                users_csv_writer.writerow([
+                    user.username, ','.join(user.repos_collab),
+                    int(user.deleted) if user.deleted else "",
+                    int(user.site_admin) if user.site_admin else "",
+                    int(user.hireable) if user.hireable else "",
+                    user.email,
+                    user.company,
+                    int(user.github_star) if user.github_star else "",
+                ])
 
 
 def load_csv_repo_file_gen(file_path):
