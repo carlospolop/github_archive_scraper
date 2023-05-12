@@ -25,7 +25,10 @@ def check_repo_in_event(event):
     global UNIQUE_REPOS
 
     if 'repo' in event:
-        repo_full_name = event['repo']['name']
+        repo_full_name = event.get('repo', {}).get('name')
+        if not repo_full_name:
+            print(f"Error: no repo_full_name in event: {event}")
+            return
 
         s = repo_full_name.split("/")
         if len(s) > 2:
@@ -63,7 +66,11 @@ def check_user_in_event(event):
     global UNIQUE_USERS
 
     if 'actor' in event or event.get("pull_request", {}).get("user", None):
-        username = event['actor']['login'] if 'actor' in event else event['pull_request']['user']['login']
+        username = event["actor"].get('login') if 'actor' in event else event.get('pull_request', {}).get('user', {}).get('login')
+
+        if not username:
+            print(f"Error: no username in event: {event}")
+            return
 
         if not username in UNIQUE_USERS:            
             UNIQUE_USERS[username] = User(
