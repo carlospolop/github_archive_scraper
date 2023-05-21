@@ -6,6 +6,7 @@ import random
 import requests
 import sys
 import time
+import threading
 
 from typing import List
 from datetime import datetime
@@ -15,7 +16,6 @@ from .classes import Repository, User
 
 GITHUB_API_BASE_URL = "https://api.github.com"
 GITHUB_GRAPHQL_API_URL = "https://api.github.com/graphql"
-
 
 def now_str():
     now = datetime.now()
@@ -81,8 +81,24 @@ def get_github_token(gh_token_or_file):
     else:
         return gh_token_or_file
 
+def get_next_token(gh_token_file, token):
+    """
+    Get a GitHub token from the provided input.
 
-def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""):
+    :param get_next_token: Given a github token file, and a token from that file, return the next token in the file.
+    :return: A GitHub token.
+    """
+    
+    with open(gh_token_file, 'r') as token_file:
+        tokens = token_file.readlines()
+        token_index = tokens.index(token)
+        if token_index == len(tokens) - 1:
+            return tokens[0].strip()
+        else:
+            return tokens[token_index + 1].strip()
+
+
+def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key="", gh_token=""):
     """
     Fetch the information of multiple GitHub repositories.
 
@@ -91,7 +107,9 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
     :return: A list of dictionaries containing the repository information, or None if the request fails.
     """
 
-    gh_token = get_github_token(gh_token_or_file)
+    # A gh_token will be given if a rate limit error of a different one is thrown
+    if not gh_token:
+        gh_token = get_github_token(gh_token_or_file)
 
     repos_full_names = [repo.full_name for repo in repos]
 
@@ -132,10 +150,16 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
         result = json.loads(response.text)
 
         if "rate limit" in str(result.get("errors", {})).lower():
-            if old_key:
-                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
-                time.sleep(5*60)
-            return get_repos_info(repos, gh_token_or_file, old_key=gh_token)
+            # Set initial old key if not set
+            if not old_key:
+                old_key = gh_token
+            
+            next_token = get_next_token(gh_token_or_file, gh_token) if "/" in gh_token_or_file else gh_token
+            if old_key == next_token:
+                print(f"{now_str()} Rate limit exceeded with all tokens in repos, sleeping 15 mins")
+                time.sleep(15*60)
+            
+            return get_repos_info(repos, gh_token_or_file, old_key=old_key, gh_token=next_token)
         
         data = result['data']
 
@@ -169,16 +193,22 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
     
     else:
         if "rate limit" in str(response.text):
-            if old_key:
-                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
-                time.sleep(5*60)
-            return get_repos_info(repos, gh_token_or_file, old_key=gh_token)
+            # Set initial old key if not set
+            if not old_key:
+                old_key = gh_token
+            
+            next_token = get_next_token(gh_token_or_file, gh_token) if "/" in gh_token_or_file else gh_token
+            if old_key == next_token:
+                print(f"{now_str()} Rate limit exceeded with all tokens in repos, sleeping 15 mins")
+                time.sleep(15*60)
+            
+            return get_repos_info(repos, gh_token_or_file, old_key=old_key, gh_token=next_token)
         
         else:
             print(f"Request failed with status code {response.status_code} with text {response.text}")
             return None
 
-def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
+def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key="", gh_token=""):
     """
     Fetch the information of a GitHub user.
 
@@ -187,7 +217,8 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
     :return: A dictionary containing the user information, or None if the request fails.
     """
 
-    gh_token = get_github_token(gh_token_or_file)        
+    if not gh_token:
+        gh_token = get_github_token(gh_token_or_file)        
 
     usernames = [user.username for user in users]
 
@@ -222,10 +253,16 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
         result = json.loads(response.text)
         
         if "rate limit" in str(result.get("errors", {})).lower():
-            if old_key:
-                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
-                time.sleep(5*60)
-            return get_users_info(users, gh_token_or_file, old_key=gh_token)
+            # Set initial old key if not set
+            if not old_key:
+                old_key = gh_token
+            
+            next_token = get_next_token(gh_token_or_file, gh_token) if "/" in gh_token_or_file else gh_token
+            if old_key == next_token:
+                print(f"{now_str()} Rate limit exceeded with all tokens in users, sleeping 15 mins")
+                time.sleep(15*60)
+            
+            return get_users_info(users, gh_token_or_file, old_key=old_key, gh_token=next_token)
                 
         data = result['data']
 
@@ -259,10 +296,16 @@ def get_users_info(users: List[User], gh_token_or_file, cont=0, old_key=""):
     
     else:
         if "rate limit" in str(response.text):
-            if old_key:
-                print(f"{now_str()} Rate limit exceeded with token {gh_token}, sleeping 5 mins")
-                time.sleep(5*60)
-            return get_users_info(users, gh_token_or_file, old_key=gh_token)
+            # Set initial old key if not set
+            if not old_key:
+                old_key = gh_token
+            
+            next_token = get_next_token(gh_token_or_file, gh_token) if "/" in gh_token_or_file else gh_token
+            if old_key == next_token:
+                print(f"{now_str()} Rate limit exceeded with all tokens in users, sleeping 15 mins")
+                time.sleep(15*60)
+            
+            return get_users_info(users, gh_token_or_file, old_key=old_key, gh_token=next_token)
         
         else:
             print(f"{now_str()} Request failed with status code {response.status_code} with text {response.text}")
@@ -350,7 +393,7 @@ def load_csv_repo_file_gen(file_path):
             repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
             yield repo
 
-def process_repos_in_batches(file_path, batch_size=200):
+def process_repos_in_batches(file_path, batch_size=300):
     cont = 0
     batch_of_repos = []
     for repo in load_csv_repo_file_gen(file_path):
@@ -358,14 +401,11 @@ def process_repos_in_batches(file_path, batch_size=200):
         
         if len(batch_of_repos) == batch_size:
             cont += 1
-            print(f"{now_str()} Repos batch {cont}")
             yield batch_of_repos
 
-            batch_of_repos.clear()
+            batch_of_repos = []  # Create a new list
 
-    # Process the remaining repos (less than 200) if any
     if batch_of_repos:
-        print(f"{now_str()} Final batch")
         yield batch_of_repos
 
 
@@ -390,22 +430,20 @@ def load_csv_user_file_gen(file_path):
             user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
             yield user
 
-def process_users_in_batches(file_path, batch_size=200):
+def process_users_in_batches(file_path, batch_size=300):
     cont = 0
     batch_of_users = []
-    for repo in load_csv_user_file_gen(file_path):
-        batch_of_users.append(repo)
+    for user in load_csv_user_file_gen(file_path):
+        batch_of_users.append(user)
         
         if len(batch_of_users) == batch_size:
             cont += 1
-            print(f"{now_str()} Users batch {cont}")
             yield batch_of_users
 
-            batch_of_users.clear()
+            batch_of_users = []  # Create a new list
 
-    # Process the remaining repos (less than 200) if any
+    # Process the remaining repos (less than 300) if any
     if batch_of_users:
-        print(f"{now_str()} Final batch")
         yield batch_of_users
 
 def count_lines(file_path):
