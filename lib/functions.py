@@ -6,7 +6,6 @@ import random
 import requests
 import sys
 import time
-import threading
 
 from typing import List
 from datetime import datetime

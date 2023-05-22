@@ -1,5 +1,4 @@
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import os
 import threading
@@ -9,7 +8,7 @@ from typing import List
 from lib.classes import Repository, User
 from lib.functions import get_repos_info, get_users_info, process_repos_in_batches, process_users_in_batches, count_lines, now_str
 from threading import Lock
-
+from time import sleep
 
 # Locks for thread-safe writing to CSV files
 REPOS_LOCK = Lock()
@@ -35,32 +34,32 @@ def check_repos(repos:List[Repository], gh_token_or_file, csv_fd):
     if not repos_info:
         return
 
-    for repo_full_name, repo_info in repos_info.items():
+    with REPOS_LOCK:
+        for repo_full_name, repo_info in repos_info.items():
 
-        for repo in repos:
-            if repo.full_name == repo_full_name:
-                break
-        
-        if repo_info["inexistent"]:
-            repo.stars = -1
-            repo.forks = -1
-            repo.watchers = -1
-            repo.archived = False
-            repo.disabled = False
-            repo.deleted = repo.deleted
-            repo.private = False if repo.deleted else True
+            for repo in repos:
+                if repo.full_name == repo_full_name:
+                    break
+            
+            if repo_info["inexistent"]:
+                repo.stars = -1
+                repo.forks = -1
+                repo.watchers = -1
+                repo.archived = False
+                repo.disabled = False
+                repo.deleted = repo.deleted
+                repo.private = False if repo.deleted else True
 
-        else:
-            repo.stars = repo_info['stargazers_count']
-            repo.forks = repo_info['forks_count']
-            repo.watchers = repo_info['watchers_count']
-            repo.archived = repo_info['archived']
-            repo.disabled = repo_info['disabled']
-            repo.deleted = False
-            repo.private = False
-        
-        owner, repo_name = repo.full_name.split('/')
-        with REPOS_LOCK:
+            else:
+                repo.stars = repo_info['stargazers_count']
+                repo.forks = repo_info['forks_count']
+                repo.watchers = repo_info['watchers_count']
+                repo.archived = repo_info['archived']
+                repo.disabled = repo_info['disabled']
+                repo.deleted = False
+                repo.private = False
+            
+            owner, repo_name = repo.full_name.split('/')
             csv_fd.writerow([owner, repo_name, repo.stars, repo.forks, repo.watchers, int(repo.deleted), int(repo.private), int(repo.archived), int(repo.disabled)])
     
     with TOTAL_LOCK:
@@ -84,23 +83,25 @@ def check_users(users: List[User], gh_token_or_file, csv_fd):
     if not users_info:
         return
     
-    for username, user_info in users_info.items():
-        # Get original csv user
-        for user in users:
-            if user.username == username:
-                break
-        
-        if user_info["inexistent"]:
-            user.deleted=True
+    with USERS_LOCK:
+        for username, user_info in users_info.items():
+            # Get original csv user
+            for user in users:
+                if user.username == username:
+                    break
+            
+            if user_info["inexistent"]:
+                user.deleted=True
 
-        else:
-            user.site_admin=user_info['site_admin']
-            user.hireable=user_info['hireable']
-            user.email=user_info['email']
-            user.company=user_info['company']
-            user.github_star=user_info['github_star']        
+            else:
+                user.site_admin=user_info['site_admin']
+                user.hireable=user_info['hireable']
+                user.email=user_info['email']
+                user.company=user_info['company']
+                user.github_star=user_info['github_star']        
 
-        with USERS_LOCK:
+            #Filter empty repos in user.repos_collab
+            user.repos_collab = list(filter(lambda item: item, user.repos_collab))
             csv_fd.writerow([user.username, ','.join(user.repos_collab), int(user.deleted), int(user.site_admin), int(user.hireable), user.email, user.company, int(user.github_star)])
     
     with TOTAL_LOCK:
@@ -140,7 +141,7 @@ def parse_github_assets(assets, gh_token_or_file, csv_fd):
 
 
 
-def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, batch_size, threads):
+def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, batch_size, num_threads):
     """
     Main function to process csvs containing GitHub users and repos and write the results to CSV files.
 
@@ -150,37 +151,61 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
     :param gh_token_or_file: Github token to use for API calls.
     :param file_tokens: File containing Github tokens to use for API calls.
     :param batch_size: The size of the batch to ask Github graphql API at the same time.
-    :param threads: The number of threads to use.
+    :param num_threads: The number of threads to use.
     :return: None
     """
-    
-    t = gh_token_or_file if gh_token_or_file else file_tokens
+
+    gh_token_or_file = gh_token_or_file if gh_token_or_file else file_tokens
+
     os.makedirs(output_folder, exist_ok=True)
 
-    with ThreadPoolExecutor(max_workers=threads) as executor:
-        if repos_file:
-            num_lines = count_lines(repos_file)
-            print(f"Processing {num_lines} repositories")
-            
-            repos_generator = process_repos_in_batches(repos_file, batch_size)
-            repos_csv_path = os.path.join(output_folder, 'repos.csv')
-            
-            with open(repos_csv_path, 'a', newline='', encoding='utf-8') as repos_csv_file:
-                repos_csv_writer = csv.writer(repos_csv_file)
-                repos_csv_writer.writerow(['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
-                executor.map(lambda batch: parse_github_assets(batch, t, repos_csv_writer), repos_generator)
+    if repos_file:
+        num_lines = count_lines(repos_file)
+        print(f"Processing {num_lines} repositories")
 
-        if users_file:
-            num_lines = count_lines(users_file)
-            print(f"Processing {num_lines} users")
+        repos_generator = process_repos_in_batches(repos_file, batch_size)
+        repos_csv_path = os.path.join(output_folder, 'repos.csv')
+
+        with open(repos_csv_path, 'a', newline='', encoding='utf-8') as repos_csv_file:
+            repos_csv_writer = csv.writer(repos_csv_file)
+            repos_csv_writer.writerow(['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
+
+            run_threads = []
+            for batch_assets in repos_generator:
+                for check_t in run_threads:
+                    if not check_t.is_alive():
+                        run_threads.remove(check_t)
+
+                if len(run_threads) < num_threads:
+                    x = threading.Thread(target=parse_github_assets, args=(batch_assets, gh_token_or_file, repos_csv_writer))
+                    x.start()
+                    run_threads.append(x)
+                else:
+                    sleep(1)
+
+    if users_file:
+        num_lines = count_lines(users_file)
+        print(f"Processing {num_lines} users")
+
+        users_generator = process_users_in_batches(users_file, batch_size)
+        users_csv_path = os.path.join(output_folder, 'users.csv')
+
+        with open(users_csv_path, 'a', newline='', encoding='utf-8') as users_csv_file:
+            users_csv_writer = csv.writer(users_csv_file)
+            users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])
             
-            users_generator = process_users_in_batches(users_file, batch_size)
-            users_csv_path = os.path.join(output_folder, 'users.csv')
-            
-            with open(users_csv_path, 'a', newline='', encoding='utf-8') as users_csv_file:
-                users_csv_writer = csv.writer(users_csv_file)
-                users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])
-                executor.map(lambda batch: parse_github_assets(batch, t, users_csv_writer), users_generator)
+            run_threads = []
+            for batch_assets in users_generator:
+                for check_t in run_threads:
+                    if not check_t.is_alive():
+                        run_threads.remove(check_t)
+
+                if len(run_threads) < num_threads:
+                    x = threading.Thread(target=parse_github_assets, args=(batch_assets, gh_token_or_file, users_csv_writer))
+                    x.start()
+                    run_threads.append(x)
+                else:
+                    sleep(1)
 
 
 if __name__ == "__main__":
