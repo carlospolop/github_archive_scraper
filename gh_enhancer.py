@@ -163,7 +163,7 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
         num_lines = count_lines(repos_file)
         print(f"Processing {num_lines} repositories")
 
-        repos_generator = process_repos_in_batches(repos_file, batch_size)
+        repos_generator = process_repos_in_batches(repos_file, batch_size, skip_header=False)
         repos_csv_path = os.path.join(output_folder, 'repos.csv')
 
         with open(repos_csv_path, 'a', newline='', encoding='utf-8') as repos_csv_file:
@@ -187,7 +187,7 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
         num_lines = count_lines(users_file)
         print(f"Processing {num_lines} users")
 
-        users_generator = process_users_in_batches(users_file, batch_size)
+        users_generator = process_users_in_batches(users_file, batch_size, skip_header=False)
         users_csv_path = os.path.join(output_folder, 'users.csv')
 
         with open(users_csv_path, 'a', newline='', encoding='utf-8') as users_csv_file:

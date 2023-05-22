@@ -408,7 +408,7 @@ def process_repos_in_batches(file_path, batch_size=300):
         yield batch_of_repos
 
 
-def load_csv_user_file_gen(file_path):
+def load_csv_user_file_gen(file_path, skip_header=True):
     """
     Load users from CSV files in the specified folder.
 
@@ -421,7 +421,9 @@ def load_csv_user_file_gen(file_path):
     with open(file_path, 'r', newline='', encoding='utf-8') as users_csv_file:
 
         users_csv_reader = csv.reader(users_csv_file)
-        next(users_csv_reader)  # Skip header
+
+        if skip_header:
+            next(users_csv_reader)  # Skip header
 
         for row in users_csv_reader:
             username, repos_collab, deleted, site_admin, hireable, email, company, github_star = row
