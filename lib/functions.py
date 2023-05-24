@@ -405,6 +405,7 @@ def process_repos_in_batches(file_path, batch_size=300):
             batch_of_repos = []  # Create a new list
 
     if batch_of_repos:
+        print("Final batch of repos")
         yield batch_of_repos
 
 
@@ -445,6 +446,7 @@ def process_users_in_batches(file_path, batch_size=300, skip_header=True):
 
     # Process the remaining repos (less than 300) if any
     if batch_of_users:
+        print("Final batch of users")
         yield batch_of_users
 
 def count_lines(file_path):
