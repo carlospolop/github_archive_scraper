@@ -431,10 +431,10 @@ def load_csv_user_file_gen(file_path, skip_header=True):
             user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
             yield user
 
-def process_users_in_batches(file_path, batch_size=300):
+def process_users_in_batches(file_path, batch_size=300, skip_header=True):
     cont = 0
     batch_of_users = []
-    for user in load_csv_user_file_gen(file_path):
+    for user in load_csv_user_file_gen(file_path, skip_header=skip_header):
         batch_of_users.append(user)
         
         if len(batch_of_users) == batch_size:
