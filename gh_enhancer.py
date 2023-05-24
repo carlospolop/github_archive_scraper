@@ -147,7 +147,7 @@ def parse_github_assets(assets, gh_token_or_file, csv_path):
 
 
 
-def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, batch_size, num_threads):
+def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, batch_size, max_num_threads):
     """
     Main function to process csvs containing GitHub users and repos and write the results to CSV files.
 
@@ -157,7 +157,7 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
     :param gh_token_or_file: Github token to use for API calls.
     :param file_tokens: File containing Github tokens to use for API calls.
     :param batch_size: The size of the batch to ask Github graphql API at the same time.
-    :param num_threads: The number of threads to use.
+    :param max_num_threads: The number of threads to use.
     :return: None
     """
 
@@ -178,22 +178,21 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
 
         run_threads = []
         for batch_assets in repos_generator:
-            for check_t in run_threads:
-                if not check_t.is_alive():
-                    run_threads.remove(check_t)
-
-            if len(run_threads) < num_threads:
-                x = threading.Thread(target=parse_github_assets, args=(batch_assets, gh_token_or_file, repos_csv_path))
-                x.start()
-                run_threads.append(x)
-            else:
+            while len(run_threads) >= max_num_threads:
                 sleep(1)
+                for check_t in run_threads:
+                    if not check_t.is_alive():
+                        run_threads.remove(check_t)
+
+            x = threading.Thread(target=parse_github_assets, args=(batch_assets, gh_token_or_file, repos_csv_path))
+            x.start()
+            run_threads.append(x)
+
 
     if users_file:
         num_lines = count_lines(users_file)
         print(f"Processing {num_lines} users")
 
-        users_generator = process_users_in_batches(users_file, batch_size, skip_header=False)
         users_csv_path = os.path.join(output_folder, 'users.csv')
 
         with open(users_csv_path, 'a', newline='', encoding='utf-8') as users_csv_file:
@@ -201,17 +200,17 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
             users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])
             
         run_threads = []
-        for batch_assets in users_generator:
-            for check_t in run_threads:
-                if not check_t.is_alive():
-                    run_threads.remove(check_t)
-
-            if len(run_threads) < num_threads:
-                x = threading.Thread(target=parse_github_assets, args=(batch_assets, gh_token_or_file, users_csv_path))
-                x.start()
-                run_threads.append(x)
-            else:
+        for batch_assets in process_users_in_batches(users_file, batch_size, skip_header=False):
+            while len(run_threads) >= max_num_threads:
                 sleep(1)
+                for check_t in run_threads:
+                    if not check_t.is_alive():
+                        run_threads.remove(check_t)
+
+            x = threading.Thread(target=parse_github_assets, args=(batch_assets, gh_token_or_file, users_csv_path))
+            x.start()
+            run_threads.append(x)
+            
 
 
 if __name__ == "__main__":

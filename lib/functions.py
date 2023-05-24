@@ -371,7 +371,7 @@ def write_csv_files(repos, users, output_folder):
                 ])
 
 
-def load_csv_repo_file_gen(file_path):
+def load_csv_repo_file_gen(file_path, skip_header=True):
     """
     Load repositories and users from CSV files in the specified folder.
 
@@ -383,7 +383,9 @@ def load_csv_repo_file_gen(file_path):
 
     with open(file_path, 'r', newline='', encoding='utf-8') as repos_csv_file:
         repos_csv_reader = csv.reader(repos_csv_file)
-        next(repos_csv_reader)  # Skip header
+
+        if skip_header:
+            next(repos_csv_reader)  # Skip header
         
 
         for row in repos_csv_reader:
@@ -392,10 +394,10 @@ def load_csv_repo_file_gen(file_path):
             repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
             yield repo
 
-def process_repos_in_batches(file_path, batch_size=300):
+def process_repos_in_batches(file_path, batch_size=300, skip_header=True):
     cont = 0
     batch_of_repos = []
-    for repo in load_csv_repo_file_gen(file_path):
+    for repo in load_csv_repo_file_gen(file_path, skip_header=skip_header):
         batch_of_repos.append(repo)
         
         if len(batch_of_repos) == batch_size:
