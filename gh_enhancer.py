@@ -200,7 +200,8 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
             users_csv_writer.writerow(['user', 'repos_collab', 'deleted', 'site_admin', 'hireable', 'email', 'company', 'github_star'])
             
         run_threads = []
-        for batch_assets in process_users_in_batches(users_file, batch_size, skip_header=False):
+        users_generator = process_users_in_batches(users_file, batch_size, skip_header=False)
+        for batch_assets in users_generator:
             while len(run_threads) >= max_num_threads:
                 sleep(1)
                 for check_t in run_threads:
