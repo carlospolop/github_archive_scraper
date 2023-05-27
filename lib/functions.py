@@ -389,10 +389,13 @@ def load_csv_repo_file_gen(file_path, skip_header=True):
         
 
         for row in repos_csv_reader:
-            owner, repo_name, stars, forks, watchers, deleted, private, archived, disabled = row
-            full_name = f"{owner}/{repo_name}"
-            repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
-            yield repo
+            try:
+                owner, repo_name, stars, forks, watchers, deleted, private, archived, disabled = row
+                full_name = f"{owner}/{repo_name}"
+                repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
+                yield repo
+            except:
+                print(f"Error reading {row}")
 
 def process_repos_in_batches(file_path, batch_size=300, skip_header=True):
     cont = 0
@@ -429,10 +432,13 @@ def load_csv_user_file_gen(file_path, skip_header=True):
             next(users_csv_reader)  # Skip header
 
         for row in users_csv_reader:
-            username, repos_collab, deleted, site_admin, hireable, email, company, github_star = row
-            repos_collab = repos_collab.split(',')
-            user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
-            yield user
+            try:
+                username, repos_collab, deleted, site_admin, hireable, email, company, github_star = row
+                repos_collab = repos_collab.split(',')
+                user = User(username, repos_collab, bool(int(deleted)), bool(int(site_admin)), bool(int(hireable)), email, company, bool(int(github_star)))
+                yield user
+            except:
+                print(f"Error reading {row}")
 
 def process_users_in_batches(file_path, batch_size=300, skip_header=True):
     cont = 0
