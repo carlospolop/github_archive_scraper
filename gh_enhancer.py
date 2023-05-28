@@ -62,8 +62,7 @@ def check_repos(repos:List[Repository], gh_token_or_file, csv_path):
                     repo.deleted = False
                     repo.private = False
                 
-                owner, repo_name = repo.full_name.split('/')
-                repos_csv_writer.writerow([owner, repo_name, repo.stars, repo.forks, repo.watchers, int(repo.deleted), int(repo.private), int(repo.archived), int(repo.disabled)])
+                repos_csv_writer.writerow([repo.full_name, repo.stars, repo.forks, repo.watchers, int(repo.deleted), int(repo.private), int(repo.archived), int(repo.disabled)])
     
     with TOTAL_LOCK:
         TOTAL_CHECKED += len(repos_info)

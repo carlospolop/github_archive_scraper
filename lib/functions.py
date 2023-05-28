@@ -337,12 +337,10 @@ def write_csv_files(repos, users, output_folder):
         
         with open(repos_csv_path, 'w', newline='', encoding='utf-8') as repos_csv_file:
             repos_csv_writer = csv.writer(repos_csv_file)
-            repos_csv_writer.writerow(['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
+            repos_csv_writer.writerow(['full_name', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
             for repo in repos.values():
-                owner, repo_name = repo.full_name.split('/')
                 repos_csv_writer.writerow([
-                    owner, 
-                    repo_name, 
+                    repo.full_name, 
                     repo.stars if repo.stars > 0 else "",
                     repo.forks if repo.forks > 0 else "",
                     repo.watchers if repo.watchers > 0 else "",
@@ -390,8 +388,7 @@ def load_csv_repo_file_gen(file_path, skip_header=True):
 
         for row in repos_csv_reader:
             try:
-                owner, repo_name, stars, forks, watchers, deleted, private, archived, disabled = row
-                full_name = f"{owner}/{repo_name}"
+                full_name, stars, forks, watchers, deleted, private, archived, disabled = row
                 repo = Repository(full_name, int(stars), int(forks), int(watchers), bool(int(deleted)), bool(int(private)), bool(int(archived)), bool(int(disabled)))
                 yield repo
             except:
