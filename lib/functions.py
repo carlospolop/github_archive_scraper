@@ -89,7 +89,7 @@ def get_next_token(gh_token_file, token):
     """
     
     with open(gh_token_file, 'r') as token_file:
-        tokens = token_file.readlines()
+        tokens = [t.strip() for t in token_file.readlines()]
         token_index = tokens.index(token)
         if token_index == len(tokens) - 1:
             return tokens[0].strip()
