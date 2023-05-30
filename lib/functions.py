@@ -188,7 +188,7 @@ def get_repos_info(repos: List[Repository], gh_token_or_file, cont=0, old_key=""
             print(f"Too many 502 with {repos_full_names}, skipping")
             return None
         time.sleep(30)
-        return get_users_info(repos, gh_token_or_file, cont=cont+1)
+        return get_repos_info(repos, gh_token_or_file, cont=cont+1)
     
     else:
         if "rate limit" in str(response.text):
