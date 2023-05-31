@@ -167,3 +167,4 @@ users.csv
 repos.csv
 *.csv
 *.json
+.DS_Store

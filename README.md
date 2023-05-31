@@ -2,6 +2,11 @@
 
 Tool to download and scrape Github Archive logs and extract interesting information about all the repos and users
 
+## Download CSVS
+
+To download the CSVs with the results you need Git Large File Storage. **Run `git lfs pull` inside the cloned repository** to download the compressed CSVs.
+
+## Usage
 
 ```bash
 
