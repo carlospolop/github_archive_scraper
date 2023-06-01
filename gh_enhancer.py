@@ -173,7 +173,7 @@ def main(users_file, repos_file, output_folder, gh_token_or_file, file_tokens, b
 
         with open(repos_csv_path, 'a', newline='', encoding='utf-8') as repos_csv_file:
             repos_csv_writer = csv.writer(repos_csv_file)
-            repos_csv_writer.writerow(['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
+            repos_csv_writer.writerow(['full_name', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled'])
 
         run_threads = []
         for batch_assets in repos_generator:
