@@ -70,7 +70,7 @@ def write_deleted_repos(output_folder, repos):
     write_csv(output_folder, 'repos_deleted.csv', header, data)
 
 def write_archived_repos(output_folder, repos):
-    private_repos = [repo for repo in repos if repo.deleted]
+    private_repos = [repo for repo in repos if repo.archived]
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
         (owner, repo_name, repo.stars, repo.forks, repo.watchers, repo.deleted, repo.private, repo.archived, repo.disabled)
@@ -80,7 +80,7 @@ def write_archived_repos(output_folder, repos):
     write_csv(output_folder, 'repos_archived.csv', header, data)
 
 def write_disabled_repos(output_folder, repos):
-    private_repos = [repo for repo in repos if repo.deleted]
+    private_repos = [repo for repo in repos if repo.disabled]
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
         (owner, repo_name, repo.stars, repo.forks, repo.watchers, repo.deleted, repo.private, repo.archived, repo.disabled)
