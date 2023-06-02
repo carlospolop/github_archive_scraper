@@ -25,6 +25,7 @@ def write_sort_repos_by_stars(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_sorted_stars.csv', header, data)
+    print("[+] Repos sorted by stars written to repos_sorted_stars.csv")
 
 
 def write_sort_repos_by_forks(output_folder, repos):
@@ -37,6 +38,7 @@ def write_sort_repos_by_forks(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_sorted_forks.csv', header, data)
+    print("[+] Repos sorted by forks written to repos_sorted_forks.csv")
 
 def write_sort_repos_by_watchers(output_folder, repos):
     repos_with_watchers = [repo for repo in repos if repo.watchers > 30]
@@ -48,6 +50,7 @@ def write_sort_repos_by_watchers(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_sorted_watchers.csv', header, data)
+    print("[+] Repos sorted by watchers written to repos_sorted_watchers.csv")
 
 def write_private_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.private]
@@ -58,6 +61,7 @@ def write_private_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_private.csv', header, data)
+    print("[+] Private repos written to repos_private.csv")
 
 def write_deleted_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.deleted]
@@ -68,6 +72,7 @@ def write_deleted_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_deleted.csv', header, data)
+    print("[+] Deleted repos written to repos_deleted.csv")
 
 def write_archived_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.archived]
@@ -78,6 +83,7 @@ def write_archived_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_archived.csv', header, data)
+    print("[+] Archived repos written to repos_archived.csv")
 
 def write_disabled_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.disabled]
@@ -88,6 +94,7 @@ def write_disabled_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_disabled.csv', header, data)
+    print("[+] Disabled repos written to repos_disabled.csv")
 
 def write_site_admin_users(output_folder, users):
     site_admin_users = [user for user in users if user.site_admin]
@@ -97,6 +104,7 @@ def write_site_admin_users(output_folder, users):
         for user in site_admin_users
     ]
     write_csv(output_folder, 'users_site_admin.csv', header, data)
+    print("[+] Site admin users written to users_site_admin.csv")
 
 def write_deleted_users(output_folder, users):
     site_admin_users = [user for user in users if user.deleted]
@@ -106,6 +114,7 @@ def write_deleted_users(output_folder, users):
         for user in site_admin_users
     ]
     write_csv(output_folder, 'users_deleted.csv', header, data)
+    print("[+] Deleted users written to users_deleted.csv")
 
 def write_hireable_users(output_folder, users):
     site_admin_users = [user for user in users if user.hireable]
@@ -115,6 +124,7 @@ def write_hireable_users(output_folder, users):
         for user in site_admin_users
     ]
     write_csv(output_folder, 'users_hireable.csv', header, data)
+    print("[+] Hireable users written to users_hireable.csv")
 
 def write_github_star_users(output_folder, users):
     site_admin_users = [user for user in users if user.github_star]
@@ -124,6 +134,7 @@ def write_github_star_users(output_folder, users):
         for user in site_admin_users
     ]
     write_csv(output_folder, 'users_github_star.csv', header, data)
+    print("[+] Github star users written to users_github_star.csv")
 
 def write_email_users(output_folder, users):
     site_admin_users = [user for user in users if user.email]
@@ -133,6 +144,7 @@ def write_email_users(output_folder, users):
         for user in site_admin_users
     ]
     write_csv(output_folder, 'users_email.csv', header, data)
+    print("[+] Email users written to users_email.csv")
 
 def write_company_users(output_folder, users):
     site_admin_users = [user for user in users if user.company]
@@ -142,6 +154,7 @@ def write_company_users(output_folder, users):
         for user in site_admin_users
     ]
     write_csv(output_folder, 'users_company.csv', header, data)
+    print("[+] Company users written to users_company.csv")
 
 def main(users_file, repos_file, logs_folder, output_folder):
     if logs_folder:
