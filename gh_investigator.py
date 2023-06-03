@@ -15,8 +15,8 @@ def write_csv(output_folder, file_name, header, data):
         for row in data:
             csv_writer.writerow(row)
 
-def write_sort_repos_by_stars(output_folder, repos):
-    repos_with_stars = [repo for repo in repos if repo.stars > 1000]
+def write_sort_repos_by_stars(output_folder, minimum_stars, repos):
+    repos_with_stars = [repo for repo in repos if repo.stars > minimum_stars]
     sorted_repos = sorted(repos_with_stars, key=lambda repo: int(repo.stars), reverse=True)
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
@@ -28,8 +28,8 @@ def write_sort_repos_by_stars(output_folder, repos):
     print("[+] Repos sorted by stars written to repos_sorted_stars.csv")
 
 
-def write_sort_repos_by_forks(output_folder, repos):
-    repos_with_forks = [repo for repo in repos if repo.forks > 400]
+def write_sort_repos_by_forks(output_folder, minimum_forks, repos):
+    repos_with_forks = [repo for repo in repos if repo.forks > minimum_forks]
     sorted_repos = sorted(repos_with_forks, key=lambda repo: int(repo.forks), reverse=True)
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
@@ -40,8 +40,8 @@ def write_sort_repos_by_forks(output_folder, repos):
     write_csv(output_folder, 'repos_sorted_forks.csv', header, data)
     print("[+] Repos sorted by forks written to repos_sorted_forks.csv")
 
-def write_sort_repos_by_watchers(output_folder, repos):
-    repos_with_watchers = [repo for repo in repos if repo.watchers > 100]
+def write_sort_repos_by_watchers(output_folder, minimum_watchers, repos):
+    repos_with_watchers = [repo for repo in repos if repo.watchers > minimum_watchers]
     sorted_repos = sorted(repos_with_watchers, key=lambda repo: int(repo.watchers), reverse=True)
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
@@ -156,7 +156,7 @@ def write_company_users(output_folder, users):
     write_csv(output_folder, 'users_company.csv', header, data)
     print("[+] Company users written to users_company.csv")
 
-def main(users_file, repos_file, logs_folder, output_folder):
+def main(users_file, repos_file, logs_folder, output_folder, minimum_stars, minimum_forks, minimum_watchers):
     if logs_folder:
         temp_users_file = os.path.join(output_folder, "users.csv")
         if os.path.isfile(temp_users_file):
@@ -171,9 +171,9 @@ def main(users_file, repos_file, logs_folder, output_folder):
         return
 
     if repos_file:
-        write_sort_repos_by_stars(output_folder, load_csv_repo_file_gen(repos_file))
-        write_sort_repos_by_forks(output_folder, load_csv_repo_file_gen(repos_file))
-        write_sort_repos_by_watchers(output_folder, load_csv_repo_file_gen(repos_file))
+        write_sort_repos_by_stars(output_folder, minimum_stars, load_csv_repo_file_gen(repos_file))
+        write_sort_repos_by_forks(output_folder, minimum_forks, load_csv_repo_file_gen(repos_file))
+        write_sort_repos_by_watchers(output_folder, minimum_watchers, load_csv_repo_file_gen(repos_file))
         write_private_repos(output_folder, load_csv_repo_file_gen(repos_file))
         write_deleted_repos(output_folder, load_csv_repo_file_gen(repos_file))
         write_archived_repos(output_folder, load_csv_repo_file_gen(repos_file))
@@ -195,6 +195,10 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--logs-folder', type=str, help="The path of the folder containing the users and/or repos csvs.")
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.", required=True)
 
+    parser.add_argument('-s', '--minimum-stars', default=1, type=int, help="Min stars of repos.", required=True)
+    parser.add_argument('-f', '--minimum-forks', type=str, help="Min forks of repos.", required=True)
+    parser.add_argument('-w', '--minimum-watchers', type=str, help="Min watchers of repos.", required=True)
+
     args = parser.parse_args()
     if args.users_file is None and args.repos_file is None and args.logs_folder is None:
         parser.error("At least one of --users-file or --repos-file or --logs-folder is required.")
@@ -211,4 +215,4 @@ if __name__ == "__main__":
     if args.logs_folder is not None and not os.path.isdir(args.logs_folder):
         parser.error("The folder specified by --logs-folder does not exist.")
 
-    main(args.users_file, args.repos_file, args.logs_folder, args.output_folder)
+    main(args.users_file, args.repos_file, args.logs_folder, args.output_folder, int(args.minimum_stars), int(args.minimum_forks), int(args.minimum_watchers))
