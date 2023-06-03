@@ -16,7 +16,7 @@ def write_csv(output_folder, file_name, header, data):
             csv_writer.writerow(row)
 
 def write_sort_repos_by_stars(output_folder, repos):
-    repos_with_stars = [repo for repo in repos if repo.stars > 500]
+    repos_with_stars = [repo for repo in repos if repo.stars > 1000]
     sorted_repos = sorted(repos_with_stars, key=lambda repo: int(repo.stars), reverse=True)
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
@@ -29,7 +29,7 @@ def write_sort_repos_by_stars(output_folder, repos):
 
 
 def write_sort_repos_by_forks(output_folder, repos):
-    repos_with_forks = [repo for repo in repos if repo.forks > 100]
+    repos_with_forks = [repo for repo in repos if repo.forks > 400]
     sorted_repos = sorted(repos_with_forks, key=lambda repo: int(repo.forks), reverse=True)
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
@@ -41,7 +41,7 @@ def write_sort_repos_by_forks(output_folder, repos):
     print("[+] Repos sorted by forks written to repos_sorted_forks.csv")
 
 def write_sort_repos_by_watchers(output_folder, repos):
-    repos_with_watchers = [repo for repo in repos if repo.watchers > 30]
+    repos_with_watchers = [repo for repo in repos if repo.watchers > 100]
     sorted_repos = sorted(repos_with_watchers, key=lambda repo: int(repo.watchers), reverse=True)
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
