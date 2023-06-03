@@ -25,7 +25,7 @@ def write_sort_repos_by_stars(output_folder, minimum_stars, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_sorted_stars.csv', header, data)
-    print("[+] Repos sorted by stars written to repos_sorted_stars.csv")
+    print(f"[+] {len(sorted_repos)} repos sorted by stars written to repos_sorted_stars.csv")
 
 
 def write_sort_repos_by_forks(output_folder, minimum_forks, repos):
@@ -38,7 +38,7 @@ def write_sort_repos_by_forks(output_folder, minimum_forks, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_sorted_forks.csv', header, data)
-    print("[+] Repos sorted by forks written to repos_sorted_forks.csv")
+    print(f"[+] {len(sorted_repos)} repos sorted by forks written to repos_sorted_forks.csv")
 
 def write_sort_repos_by_watchers(output_folder, minimum_watchers, repos):
     repos_with_watchers = [repo for repo in repos if repo.watchers > minimum_watchers]
@@ -50,7 +50,7 @@ def write_sort_repos_by_watchers(output_folder, minimum_watchers, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_sorted_watchers.csv', header, data)
-    print("[+] Repos sorted by watchers written to repos_sorted_watchers.csv")
+    print(f"[+] {len(sorted_repos)} repos sorted by watchers written to repos_sorted_watchers.csv")
 
 def write_private_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.private]
@@ -61,7 +61,7 @@ def write_private_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_private.csv', header, data)
-    print("[+] Private repos written to repos_private.csv")
+    print(f"[+] {len(private_repos)} private repos written to repos_private.csv")
 
 def write_deleted_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.deleted]
@@ -72,7 +72,7 @@ def write_deleted_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_deleted.csv', header, data)
-    print("[+] Deleted repos written to repos_deleted.csv")
+    print(f"[+] {len(private_repos)} deleted repos written to repos_deleted.csv")
 
 def write_archived_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.archived]
@@ -83,7 +83,7 @@ def write_archived_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_archived.csv', header, data)
-    print("[+] Archived repos written to repos_archived.csv")
+    print(f"[+] {len(private_repos)} archived repos written to repos_archived.csv")
 
 def write_disabled_repos(output_folder, repos):
     private_repos = [repo for repo in repos if repo.disabled]
@@ -94,7 +94,7 @@ def write_disabled_repos(output_folder, repos):
         for owner, repo_name in [repo.full_name.split('/')]
     ]
     write_csv(output_folder, 'repos_disabled.csv', header, data)
-    print("[+] Disabled repos written to repos_disabled.csv")
+    print(f"[+] {len(private_repos)} disabled repos written to repos_disabled.csv")
 
 def write_site_admin_users(output_folder, users):
     site_admin_users = [user for user in users if user.site_admin]
