@@ -196,8 +196,8 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output-folder', type=str, help="The path of the folder where the CSV files will be generated.", required=True)
 
     parser.add_argument('-s', '--minimum-stars', default=1, type=int, help="Min stars of repos.", required=True)
-    parser.add_argument('-f', '--minimum-forks', type=str, help="Min forks of repos.", required=True)
-    parser.add_argument('-w', '--minimum-watchers', type=str, help="Min watchers of repos.", required=True)
+    parser.add_argument('-f', '--minimum-forks', default=1,type=int, help="Min forks of repos.", required=True)
+    parser.add_argument('-w', '--minimum-watchers', default=1, type=int, help="Min watchers of repos.", required=True)
 
     args = parser.parse_args()
     if args.users_file is None and args.repos_file is None and args.logs_folder is None:
