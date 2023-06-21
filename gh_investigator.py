@@ -53,7 +53,7 @@ def write_sort_repos_by_watchers(output_folder, minimum_watchers, repos):
     print(f"[+] {len(sorted_repos)} repos sorted by watchers written to repos_sorted_watchers.csv")
 
 def write_private_repos(output_folder, repos):
-    private_repos = [repo for repo in repos if repo.private]
+    private_repos = [repo for repo in repos if repo.private and int(repo.private) > 0]
     header = ['owner', 'repo', 'stars', 'forks', 'watchers', 'deleted', 'private', 'archived', 'disabled']
     data = [
         (owner, repo_name, repo.stars, repo.forks, repo.watchers, repo.deleted, repo.private, repo.archived, repo.disabled)
